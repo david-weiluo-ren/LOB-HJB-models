@@ -30,40 +30,91 @@ class AbstractLOB(object):
     @abc.abstractproperty
     def half_I(self):
         pass
+    
    
-    @abc.abstractproperty
-    def resutlt(self):
-        pass
+    @property
+    def result(self):
+        return self._data_helper(self._index_result_2darray)
     
-    @abc.abstractproperty
+    @property
     def a_control(self):
-        pass
+        return self._data_helper(self._index_a_control_2darray)
     
-    @abc.abstractproperty
+    @property
     def b_control(self):
-        pass
+        return self._data_helper(self._index_b_control_2darray)
     
-    def __init__(self, gamma = 0.1, A = 1, kappa = 0.1, beta = 0.02, N = 20, halfI = 2000, sigma_s = 0.05,\
-                 q_0 = 0, x_0 = 3.0, s_0 = 5.0,  delta_t = 0.01, verbose = False, num_time_step = 100):
+    def _data_helper(self, data_index):
+        if len(self._data[data_index]) == 0:
+            return self._data[data_index]
+        else:
+            return self.user_friendly_list_of_array(self._data[data_index], self.data_index)
+
+        
+    @property
+    def _result(self):
+        return self._data[self._index_result_2darray]
+    @property
+    def _a_control(self):
+        return self._data[self._index_a_control_2darray]
+    
+    @property
+    def _b_control(self):
+        return self._data[self._index_b_control_2darray]
+    
+       
+    def __init__(self, gamma = 0.1, A = 1, kappa = 0.1, beta = 0.02, N = 20, half_I = 2000, sigma_s = 0.05,\
+                 q_0 = 0, x_0 = 3.0, s_0 = 5.0,  delta_t = 0.01, verbose = False, num_time_step = 100, extend_space = 2):
         self.gamma = gamma
         self.A = A
         self.kappa = kappa
         self.beta = beta
         self.N = N
         self.sigma_s = sigma_s
-       
+        self._half_I = half_I
         self.delta_t = delta_t
         self.I = 2 * self.half_I + 1
+        self.implement_I = self.I + 2 * self.extend_space
+        self.implement_q_space = np.hstack((-np.arange(1, self.extend_space+1) * self.delta_q + self.q_space[0],\
+                                             self.q_space, \
+                                             np.arange(1, self.extend_space+1) * self.delta_q + self.q_space[0]))
+        
         self.num_time_step = num_time_step
         self.T = self.delta_t * self.num_time_step
         self.step_index = 0
         self.v_init = self.terminal_condition()
+        self.extend_space = extend_space
+        self._data = [[], [], []]
         
-        self._result = []
-        self._a_control = []
-        self._b_control = []
+        self._cache = [None, None, None]
+        self._index_result_2darray = 0
+        self._index_a_control_2darray = 1
+        self._index_b_control_2darray = 2
+    def check_user_friendly_helper(self, front_extend_space=None, behind_extend_space=None, totalLen = None):
+        if front_extend_space is None:
+            front_extend_space = self.extend_space
+        if behind_extend_space is None:
+            behind_extend_space = self.extend_space
+        if totalLen is None:
+            totalLen = self.I
+        return [front_extend_space, behind_extend_space]
+    def user_friendly_index(self, front_extend_space=None, behind_extend_space=None, totalLen = None):
+        front_extend_space, behind_extend_space, totalLen = self.check_extend_space_helper(front_extend_space, behind_extend_space, totalLen)
+        return np.arange(0, totalLen)[front_extend_space, -behind_extend_space]
     
-        
+    def user_friendly_array(self, arr, front_extend_space, behind_extend_space):
+        return arr[self.user_friendly_index(front_extend_space, behind_extend_space, len(arr))] 
+         
+    def user_friendly_list_of_array(self, list_of_array, cache_index=None, front_extend_space=None, behind_extend_space=None):
+        friendly_index = self.user_friendly_index(front_extend_space, behind_extend_space, len(list_of_array[0]))
+        if cache_index is not None:
+            if self._cache[cache_index].shape[0] < len(list_of_array):
+                self._cache[cache_index] = np.vstack((self._cache[cache_index],\
+                                                     list_of_array[self._cache[cache_index].shape[0]:]))
+            return self._cache[cache_index].T[friendly_index].T
+        else:
+            tmp_2darray = np.vstack(list_of_array)
+            return tmp_2darray.T[friendly_index].T
     @abc.abstractmethod
     def terminal_condition(self):
         pass
@@ -88,16 +139,12 @@ class AbstractImplicitLOB(AbstractLOB):
     
     __metaclass__ = abc.ABCMeta
     
-    @abc.abstractproperty
-    def implement_I(self):
-        pass
     
     
-    def __init__(self, gamma = 0.1, A = 1, kappa = 0.1, beta = 0.02, N = 20, halfI = 2000, sigma_s = 0.05,\
-                 q_0 = 0, x_0 = 3.0, s_0 = 5.0,  delta_t = 0.01, verbose = False, num_time_step = 100,\
-                 iter_max = 200, new_weight = 0.1, abs_threshold = 10**(-4), rlt_threshold = 10**(-2)):
-        super.__init__(gamma = gamma, A = A, kappa = kappa, beta = beta, N = N, halfI = halfI, sigma_s = sigma_s,\
-                       q_0 = q_0, x_0 = x_0, s_0 = s_0, delta_t = delta_t, verbose = verbose, num_time_step = num_time_step)
+    
+    def __init__(self, iter_max = 200, new_weight = 0.1, abs_threshold = 10**(-4), rlt_threshold = 10**(-2),\
+                 *args, **kwargs):
+        super(AbstractImplicitLOB, self).__init__(*args, **kwargs)
         self.iter_max = iter_max
         self.new_weight = new_weight
         self.abs_threshold = abs_threshold
