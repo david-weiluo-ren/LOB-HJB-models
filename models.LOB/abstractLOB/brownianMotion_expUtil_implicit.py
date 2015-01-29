@@ -35,13 +35,9 @@ class BrownianMotion_ExpUtil_Implicit_NeumannBC(AbstractImplicitLOB_NeumannBC):
     def b_control(self):
         return self._data_helper(self._index_b_control_2darray, self.extend_space - 1, self.extend_space - 1)
     
-    def __init__(self, expIntensity_lower_tolerance_power = 2, tolerance_power = 2, *args, **kwargs):
+    def __init__(self, tolerance_power = 2, *args, **kwargs):
         super(BrownianMotion_ExpUtil_Implicit_NeumannBC, self).__init__(*args, **kwargs)
-        self.expIntensity_lower_tolerance_power = expIntensity_lower_tolerance_power
-        self.control_lower_bound = 0
-
-        #A*exp(-kappa*control_upper_bound) < 10**(-expIntensity_lower_tolerance_power)
-        self.control_upper_bound = (np.log(self.A) + np.log(10)*self.expIntensity_lower_tolerance_power)/self.kappa
+        
         self.tolerance_power = tolerance_power
 
     def terminal_condition(self):
@@ -63,6 +59,7 @@ class BrownianMotion_ExpUtil_Implicit_NeumannBC(AbstractImplicitLOB_NeumannBC):
 
     
     def feedback_control(self, v):
+        
         super(BrownianMotion_ExpUtil_Implicit_NeumannBC, self).feedback_control(v)
         [delta_v_forward, delta_v_backward, delta_v_second_order, v_mid, implement_q_space_mid] = self.fixedData(v)
     
@@ -96,46 +93,33 @@ class BrownianMotion_ExpUtil_Implicit_NeumannBC(AbstractImplicitLOB_NeumannBC):
         return [optimal_a, optimal_b]
 
 
-    def coef_offset_helper(self, v_curr, curr_control):
+    def linear_system_matrix_helper(self, v_curr, curr_control):
         curr_a_star = curr_control[0]
         curr_b_star = curr_control[1]
         co_left = ( self.A * np.exp(- self.kappa * curr_a_star) + np.true_divide(self.A * np.exp(- self.kappa * curr_a_star)\
              + self.A * np.exp(- self.kappa * curr_b_star), 2*self.delta_q)+ self.gamma * self.A * np.exp(- self.kappa * curr_b_star) * curr_b_star) * self.delta_t
         co_right = ( self.A * np.exp(- self.kappa * curr_b_star) + np.true_divide(self.A * np.exp(- self.kappa * curr_a_star)\
              + self.A * np.exp(- self.kappa * curr_b_star), 2*self.delta_q)+ self.gamma *  self.A * np.exp(- self.kappa * curr_a_star) * curr_a_star) * self.delta_t
-        return [co_left, co_right]
-
-    
-    def coef_at_minus_one(self, v_curr, curr_control):
-        super(BrownianMotion_ExpUtil_Implicit_NeumannBC, self).coef_at_minus_one(v_curr, curr_control)
-        
-        return -self.coef_at_minus_one_helper(self.coef_offset_helper(v_curr, curr_control)[0])
-    
-    def coef_at_plus_one(self, v_curr, curr_control):
-        super(BrownianMotion_ExpUtil_Implicit_NeumannBC, self).coef_at_plus_one(v_curr, curr_control)
-        curr_a_star = curr_control[0]
-        curr_b_star = curr_control[1]
-        return -self.coef_at_plus_one_helper(self.coef_offset_helper(v_curr, curr_control)[1])
-        
-    def coef_at_curr(self, v_curr, curr_control):
-        super(BrownianMotion_ExpUtil_Implicit_NeumannBC, self).coef_at_curr(v_curr, curr_control)
-        curr_a_star = curr_control[0]
-        curr_b_star = curr_control[1]
-        tmp = self.delta_q + self.delta_t * self.delta_q *( self.gamma *(curr_a_star * self.A * np.exp(- self.kappa * curr_a_star) \
+        co_mid = co_left + co_right + self.delta_q + self.delta_t * self.delta_q *( self.gamma *(curr_a_star * self.A * np.exp(- self.kappa * curr_a_star) \
             + curr_b_star * self.A * np.exp(- self.kappa * curr_b_star) ) + self.gamma*self.implement_q_space[1:-1] * self.beta * \
             (curr_a_star * self.A * np.exp(- self.kappa * curr_a_star) - curr_b_star * self.A * np.exp(- self.kappa * curr_b_star))\
               - 0.5 * self.gamma**2 * ( self.A * np.exp(- self.kappa * curr_a_star)  *curr_a_star * curr_a_star + self.A * np.exp(- self.kappa * curr_b_star) \
               *curr_b_star*curr_b_star) - 0.5*self.gamma**2*self.implement_q_space[1:-1]*self.implement_q_space[1:-1]*self.sigma_s**2 )
-        co_left, co_right = self.coef_offset_helper(v_curr, curr_control)
-        tmp += (co_left + co_right)
-        return self.coef_at_curr_helper(tmp)
-
-
-    
+        
+       
+        
+        return [-self.coef_at_minus_one_helper(co_left),  -self.coef_at_plus_one_helper(co_right), self.coef_at_curr_helper(co_mid)]
+        
+            
     def equation_right(self, v_curr, curr_control):
-        super(BrownianMotion_ExpUtil_Implicit_NeumannBC, self).equation_right(v_curr, curr_control)
+        
         return self.equation_right_helper(v_curr[1:-1]*self.delta_q)
-
+    
+    def linear_system(self, v_curr, curr_control):
+        super(BrownianMotion_ExpUtil_Implicit_NeumannBC, self).linear_system(v_curr, curr_control)
+        matrix_data = self.linear_system_matrix_helper(v_curr, curr_control)
+        matrix_data.append(self.equation_right(v_curr, curr_control))
+        return matrix_data
 
 
 

@@ -65,7 +65,8 @@ class AbstractLOB(object):
     
        
     def __init__(self, gamma = 0.1, A = 1, kappa = 0.1, beta = 0.02, N = 20, half_I = 2000, sigma_s = 0.05,\
-                 q_0 = 0, x_0 = 3.0, s_0 = 5.0,  delta_t = 0.01, verbose = False, num_time_step = 100, extend_space = 2):
+                 q_0 = 0, x_0 = 3.0, s_0 = 5.0,  delta_t = 0.01, verbose = False, num_time_step = 100, extend_space = 2,\
+                 expIntensity_lower_tolerance_power = 2):
         self.gamma = gamma
         self.A = A
         self.kappa = kappa
@@ -96,7 +97,12 @@ class AbstractLOB(object):
         self._index_result_2darray = 0
         self._index_a_control_2darray = 1
         self._index_b_control_2darray = 2
-    
+        self.expIntensity_lower_tolerance_power = expIntensity_lower_tolerance_power
+        self.control_lower_bound = 0
+
+        #A*exp(-kappa*control_upper_bound) < 10**(-expIntensity_lower_tolerance_power)
+        self.control_upper_bound = (np.log(self.A) + np.log(10)*self.expIntensity_lower_tolerance_power)/self.kappa
+        
     @abstractmethod
     def compute_q_space(self):
         pass
@@ -149,7 +155,7 @@ class AbstractLOB(object):
            
         for i in xrange(K):
             self._result.append(v_curr)
-            tmp = self._data_helper(self._index_result_2darray)
+           
             v_curr = self.one_step_back(v_curr)
             self.step_index += 1
             
@@ -190,6 +196,9 @@ class AbstractImplicitLOB(AbstractLOB):
     
     @abc.abstractmethod
     def feedback_control(self, v):
+        """
+        should return [optimal_a, optimal_b]
+        """
         pass
     
     def close_enough(self, v_new, v_curr):
@@ -205,34 +214,24 @@ class AbstractImplicitLOB(AbstractLOB):
     
     
     def one_iteration(self, v_curr, curr_control):
-        co_left = self.coef_at_minus_one(v_curr, curr_control)
-        co_right = self.coef_at_plus_one(v_curr, curr_control)
-        co_mid = self.coef_at_curr(v_curr, curr_control)
-        eq_right= self.equation_right(v_curr, curr_control)
+       
         
+        co_left, co_right, co_mid, eq_right = self.linear_system(v_curr, curr_control)
         data = [co_left, co_mid, co_right]   #mind the sign here.
         diags = [-1, 0, 1]
         co_matrix = sparse.spdiags(data, diags, self.implement_I, self.implement_I, format = 'csc')
         x = spsolve(co_matrix, eq_right)
         return spsolve(co_matrix, eq_right)
     
-        
-    @abc.abstractmethod
-    def coef_at_minus_one(self, v_curr, curr_control):
+    @abstractmethod
+    def linear_system(self, v_curr, curr_control):
         """
-        Return the coefficients with length implement_I
-        corresponding to lower-left part of triangle matrix
-        """
-        pass
+        should return [co_left, co_right, co_mid, eq_right]
         
-    @abc.abstractmethod
-    def coef_at_plus_one(self, v_curr, curr_control):
-        pass
+        each of them should be an array of length implement_I.
         
-    @abc.abstractmethod
-    def coef_at_curr(self, v_curr, curr_control):
-        pass
-    
-    @abc.abstractmethod
-    def equation_right(self, v_curr, curr_control):
+        co_left corresponding to the lower-left part of triangle matrix whose last element would not show up in the triangle matrix.
+        
+        co_right corresponding to the upper-right part of triangle matrix whose first element would not show up in the triangle matrix.
+        """  
         pass
