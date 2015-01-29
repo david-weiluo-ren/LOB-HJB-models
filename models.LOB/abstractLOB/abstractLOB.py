@@ -122,7 +122,7 @@ class AbstractLOB(object):
     def user_friendly_array(self, arr, front_extend_space, behind_extend_space):
         return arr[self.user_friendly_index(front_extend_space, behind_extend_space, len(arr))] 
          
-    def user_friendly_list_of_array(self, list_of_array, cache_index=None, front_extend_space=None, behind_extend_space=None):
+    def user_friendly_list_of_array(self, list_of_array, cache_index=None, front_extend_space=None, behind_extend_space=None, call_func=None):
         friendly_index = self.user_friendly_index(front_extend_space, behind_extend_space, len(list_of_array[0]))
         if cache_index is not None:
             if self._cache[cache_index] is None:
@@ -131,9 +131,14 @@ class AbstractLOB(object):
             elif self._cache[cache_index].shape[0] < len(list_of_array):
                 self._cache[cache_index] = np.vstack((self._cache[cache_index],\
                                                      list_of_array[self._cache[cache_index].shape[0]:]))
-            return self._cache[cache_index].T[friendly_index].T
+            if call_func is not None:
+                return call_func(self._cache[cache_index]).T[friendly_index].T
+            else:
+                return self._cache[cache_index].T[friendly_index].T
         else:
             tmp_2darray = np.vstack(list_of_array)
+            if call_func is not None:
+                tmp_2darray = call_func(tmp_2darray)
             return tmp_2darray.T[friendly_index].T
     @abc.abstractmethod
     def terminal_condition(self):

@@ -12,6 +12,9 @@ class Test(unittest.TestCase):
     def test_result1(self):
         myObj = BrownianMotion_ExpUtil_Implicit_NeumannBC()
         myObj.run()
+        self.assertEqual(len(myObj.q_space), len(myObj.result[-1]))
+        
+        self.assertEqual(len(myObj.q_space), len(myObj.a_control[-1]))
         tmp = myObj.result
         plot(tmp[-1])
         show()
