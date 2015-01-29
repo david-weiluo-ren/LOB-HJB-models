@@ -10,7 +10,9 @@ class BrownianMotion_ExpUtil_Implicit_NeumannBC(AbstractImplicitLOB_NeumannBC):
     Basically "secondTry".
     '''
 
-
+    @property
+    def extend_space(self):
+        return self._extend_space * int(self.half_I / self.N)
     @property
     def half_I(self):
         return self._half_I

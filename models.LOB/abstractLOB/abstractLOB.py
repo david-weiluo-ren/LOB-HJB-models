@@ -63,6 +63,9 @@ class AbstractLOB(object):
     def _b_control(self):
         return self._data[self._index_b_control_2darray]
     
+    @property
+    def extend_space(self):
+        return self._extend_space
        
     def __init__(self, gamma = 0.1, A = 1, kappa = 0.1, beta = 0.02, N = 20, half_I = 2000, sigma_s = 0.05,\
                  q_0 = 0, x_0 = 3.0, s_0 = 5.0,  delta_t = 0.01, verbose = False, num_time_step = 100, extend_space = 2,\
@@ -76,13 +79,13 @@ class AbstractLOB(object):
         self._half_I = half_I
         self.delta_t = delta_t
         self.I = 2 * self.half_I + 1
-        self.extend_space = extend_space
+        self._extend_space = extend_space
         self.verbose = verbose
         self._delta_q = None
         self._q_space = None
         self.compute_q_space()
         self.implement_I = self.I + 2 * self.extend_space
-        self.implement_q_space = np.hstack((-np.arange(1, self.extend_space+1) * self.delta_q + self.q_space[0],\
+        self.implement_q_space = np.hstack((-np.arange(self.extend_space, 0, -1) * self.delta_q + self.q_space[0],\
                                              self.q_space, \
                                              np.arange(1, self.extend_space+1) * self.delta_q + self.q_space[-1]))
         
@@ -102,6 +105,18 @@ class AbstractLOB(object):
 
         #A*exp(-kappa*control_upper_bound) < 10**(-expIntensity_lower_tolerance_power)
         self.control_upper_bound = (np.log(self.A) + np.log(10)*self.expIntensity_lower_tolerance_power)/self.kappa
+
+    def get_extend_space(self):
+        return self.__extend_space
+
+
+    def set_extend_space(self, value):
+        self.__extend_space = value
+
+
+    def del_extend_space(self):
+        del self.__extend_space
+
         
     @abstractmethod
     def compute_q_space(self):
@@ -151,19 +166,22 @@ class AbstractLOB(object):
         """
         pass
     
-    def run(self, K = None):
+    def run(self, K = None, use_cache = False):
+        if not use_cache:
+            self._data = [[], [], []]  #If no cache should be used, everything is restarted, all previous data are lost.
+        
         if K is None:
             K = self.num_time_step
-
-        K = K - len(self._result) if K > len(self._result) else 0
-        v_curr = self.v_init if len(self.result) == 0 else self._result.pop()
+        if use_cache:
+            K = K - len(self._result) if K > len(self._result) else 0
+        v_curr = self.v_init if not use_cache or len(self.result) == 0 else self._result.pop()
            
         for i in xrange(K):
             self._result.append(v_curr)
            
             v_curr = self.one_step_back(v_curr)
             self.step_index += 1
-            
+             
 class AbstractImplicitLOB(AbstractLOB):
     
     __metaclass__ = abc.ABCMeta
