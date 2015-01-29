@@ -12,7 +12,8 @@ class Test(unittest.TestCase):
     def test_result1(self):
         myObj = BrownianMotion_ExpUtil_Implicit_NeumannBC()
         myObj.run()
-        plot(BrownianMotion_ExpUtil_Implicit_NeumannBC.result[-1])
+        tmp = myObj.result
+        plot(tmp[-1])
         show()
 
 if __name__ == "__main__":

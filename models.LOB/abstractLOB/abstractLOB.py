@@ -49,7 +49,7 @@ class AbstractLOB(object):
         if len(self._data[data_index]) == 0:
             return self._data[data_index]
         else:
-            return self.user_friendly_list_of_array(self._data[data_index], self.data_index, front_extend_space, behind_extend_space)
+            return self.user_friendly_list_of_array(self._data[data_index], data_index, front_extend_space, behind_extend_space)
 
         
     @property
@@ -76,6 +76,7 @@ class AbstractLOB(object):
         self.delta_t = delta_t
         self.I = 2 * self.half_I + 1
         self.extend_space = extend_space
+        self.verbose = verbose
         self._delta_q = None
         self._q_space = None
         self.compute_q_space()
@@ -107,10 +108,10 @@ class AbstractLOB(object):
             behind_extend_space = self.extend_space
         if totalLen is None:
             totalLen = self.I
-        return [front_extend_space, behind_extend_space]
+        return [front_extend_space, behind_extend_space, totalLen]
     def user_friendly_index(self, front_extend_space=None, behind_extend_space=None, totalLen = None):
-        front_extend_space, behind_extend_space, totalLen = self.check_extend_space_helper(front_extend_space, behind_extend_space, totalLen)
-        return np.arange(0, totalLen)[front_extend_space, -behind_extend_space]
+        front_extend_space, behind_extend_space, totalLen = self.check_user_friendly_helper(front_extend_space, behind_extend_space, totalLen)
+        return np.arange(0, totalLen)[front_extend_space: -behind_extend_space]
     
     def user_friendly_array(self, arr, front_extend_space, behind_extend_space):
         return arr[self.user_friendly_index(front_extend_space, behind_extend_space, len(arr))] 
@@ -118,7 +119,10 @@ class AbstractLOB(object):
     def user_friendly_list_of_array(self, list_of_array, cache_index=None, front_extend_space=None, behind_extend_space=None):
         friendly_index = self.user_friendly_index(front_extend_space, behind_extend_space, len(list_of_array[0]))
         if cache_index is not None:
-            if self._cache[cache_index].shape[0] < len(list_of_array):
+            if self._cache[cache_index] is None:
+                self._cache[cache_index] = np.vstack(list_of_array)
+           
+            elif self._cache[cache_index].shape[0] < len(list_of_array):
                 self._cache[cache_index] = np.vstack((self._cache[cache_index],\
                                                      list_of_array[self._cache[cache_index].shape[0]:]))
             return self._cache[cache_index].T[friendly_index].T
@@ -145,6 +149,7 @@ class AbstractLOB(object):
            
         for i in xrange(K):
             self._result.append(v_curr)
+            tmp = self._data_helper(self._index_result_2darray)
             v_curr = self.one_step_back(v_curr)
             self.step_index += 1
             
@@ -178,7 +183,7 @@ class AbstractImplicitLOB(AbstractLOB):
                 self._b_control.append(return_control[1])
                 return v_new
             v_tmp = self.new_weight * v_new + (1 - self.new_weight) * v_curr
-            print v_tmp
+            
             iter_count += 1
             if iter_count > self.iter_max:
                 raise Exception('iteration cannot converge!')
@@ -208,6 +213,7 @@ class AbstractImplicitLOB(AbstractLOB):
         data = [co_left, co_mid, co_right]   #mind the sign here.
         diags = [-1, 0, 1]
         co_matrix = sparse.spdiags(data, diags, self.implement_I, self.implement_I, format = 'csc')
+        x = spsolve(co_matrix, eq_right)
         return spsolve(co_matrix, eq_right)
     
         

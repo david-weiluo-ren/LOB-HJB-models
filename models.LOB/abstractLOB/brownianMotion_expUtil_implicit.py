@@ -127,14 +127,14 @@ class BrownianMotion_ExpUtil_Implicit_NeumannBC(AbstractImplicitLOB_NeumannBC):
               - 0.5 * self.gamma**2 * ( self.A * np.exp(- self.kappa * curr_a_star)  *curr_a_star * curr_a_star + self.A * np.exp(- self.kappa * curr_b_star) \
               *curr_b_star*curr_b_star) - 0.5*self.gamma**2*self.implement_q_space[1:-1]*self.implement_q_space[1:-1]*self.sigma_s**2 )
         co_left, co_right = self.coef_offset_helper(v_curr, curr_control)
-        tmp -= (co_left + co_right)
+        tmp += (co_left + co_right)
         return self.coef_at_curr_helper(tmp)
 
 
     
     def equation_right(self, v_curr, curr_control):
         super(BrownianMotion_ExpUtil_Implicit_NeumannBC, self).equation_right(v_curr, curr_control)
-        return self.equation_right_helper(v_curr[1:-1])
+        return self.equation_right_helper(v_curr[1:-1]*self.delta_q)
 
 
 
