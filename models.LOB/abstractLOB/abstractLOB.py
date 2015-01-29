@@ -8,6 +8,7 @@ from _pyio import __metaclass__
 import abc
 from scipy.sparse.linalg import spsolve
 from scipy import sparse
+from abc import abstractmethod
 class AbstractLOB(object):
     '''
     An abstract model as parents for all LOB models, Brownian Motion or Poisson, exp utility or linear with penalty, with
@@ -74,22 +75,31 @@ class AbstractLOB(object):
         self._half_I = half_I
         self.delta_t = delta_t
         self.I = 2 * self.half_I + 1
+        self.extend_space = extend_space
+        self._delta_q = None
+        self._q_space = None
+        self.compute_q_space()
         self.implement_I = self.I + 2 * self.extend_space
         self.implement_q_space = np.hstack((-np.arange(1, self.extend_space+1) * self.delta_q + self.q_space[0],\
                                              self.q_space, \
-                                             np.arange(1, self.extend_space+1) * self.delta_q + self.q_space[0]))
+                                             np.arange(1, self.extend_space+1) * self.delta_q + self.q_space[-1]))
         
         self.num_time_step = num_time_step
         self.T = self.delta_t * self.num_time_step
         self.step_index = 0
         self.v_init = self.terminal_condition()
-        self.extend_space = extend_space
+        
         self._data = [[], [], []]
         
         self._cache = [None, None, None]
         self._index_result_2darray = 0
         self._index_a_control_2darray = 1
         self._index_b_control_2darray = 2
+    
+    @abstractmethod
+    def compute_q_space(self):
+        pass
+    
     def check_user_friendly_helper(self, front_extend_space=None, behind_extend_space=None, totalLen = None):
         if front_extend_space is None:
             front_extend_space = self.extend_space
@@ -121,6 +131,9 @@ class AbstractLOB(object):
     
     @abc.abstractmethod
     def one_step_back(self, v_curr):
+        """
+        To compute the value function and optimal feedback controls.
+        """
         pass
     
     def run(self, K = None):
@@ -151,6 +164,7 @@ class AbstractImplicitLOB(AbstractLOB):
         self.rlt_threshold = rlt_threshold
     
     def one_step_back(self, v_curr):
+        AbstractLOB.one_step_back(self, v_curr)
         v_tmp = v_curr
         iter_count = 0
         while True:
@@ -194,9 +208,14 @@ class AbstractImplicitLOB(AbstractLOB):
         diags = [-1, 0, 1]
         co_matrix = sparse.spdiags(data, diags, self.implement_I, self.implement_I, format = 'csc')
         return spsolve(co_matrix, eq_right)
+    
         
     @abc.abstractmethod
     def coef_at_minus_one(self, v_curr, curr_control):
+        """
+        Return the coefficients with length implement_I
+        corresponding to lower-left part of triangle matrix
+        """
         pass
         
     @abc.abstractmethod
@@ -209,7 +228,4 @@ class AbstractImplicitLOB(AbstractLOB):
     
     @abc.abstractmethod
     def equation_right(self, v_curr, curr_control):
-        
-    
-            
-        
+        pass
