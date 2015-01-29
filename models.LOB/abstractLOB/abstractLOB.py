@@ -45,11 +45,11 @@ class AbstractLOB(object):
     def b_control(self):
         return self._data_helper(self._index_b_control_2darray)
     
-    def _data_helper(self, data_index):
+    def _data_helper(self, data_index, front_extend_space=None, behind_extend_space=None):
         if len(self._data[data_index]) == 0:
             return self._data[data_index]
         else:
-            return self.user_friendly_list_of_array(self._data[data_index], self.data_index)
+            return self.user_friendly_list_of_array(self._data[data_index], self.data_index, front_extend_space, behind_extend_space)
 
         
     @property
@@ -145,7 +145,7 @@ class AbstractLOB(object):
            
         for i in xrange(K):
             self._result.append(v_curr)
-            v_curr = self.oneStepBack(v_curr)
+            v_curr = self.one_step_back(v_curr)
             self.step_index += 1
             
 class AbstractImplicitLOB(AbstractLOB):
@@ -178,6 +178,7 @@ class AbstractImplicitLOB(AbstractLOB):
                 self._b_control.append(return_control[1])
                 return v_new
             v_tmp = self.new_weight * v_new + (1 - self.new_weight) * v_curr
+            print v_tmp
             iter_count += 1
             if iter_count > self.iter_max:
                 raise Exception('iteration cannot converge!')
@@ -198,7 +199,7 @@ class AbstractImplicitLOB(AbstractLOB):
                 < self.rlt_threshold
     
     
-    def oneIter(self, v_curr, curr_control):
+    def one_iteration(self, v_curr, curr_control):
         co_left = self.coef_at_minus_one(v_curr, curr_control)
         co_right = self.coef_at_plus_one(v_curr, curr_control)
         co_mid = self.coef_at_curr(v_curr, curr_control)

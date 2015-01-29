@@ -9,7 +9,7 @@ import numpy as np
 class Test_AbstractImplicitLOB_NeumannBC(AbstractImplicitLOB_NeumannBC):
     
     def compute_q_space(self):
-        self._q_space, self._delta_q  = np.linspace(-self.N, self.N, self.I, retstep = True)
+        self._q_space, self.delta_q  = np.linspace(-self.N, self.N, self.I, retstep = True)
     def __init__(self, *args, **kwargs):
         super(Test_AbstractImplicitLOB_NeumannBC, self).__init__(*args, **kwargs)
       

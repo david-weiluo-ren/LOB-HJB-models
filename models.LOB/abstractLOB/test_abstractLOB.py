@@ -19,10 +19,10 @@ class SimpleLOB_Implementation(abstractLOB.AbstractLOB):
     
     @property
     def delta_q(self):
-        return self._delta_q
+        return self.delta_q
     
     def compute_q_space(self):
-        self._q_space, self._delta_q  = np.linspace(-self.N, self.N, self.I, retstep = True)
+        self._q_space, self.delta_q  = np.linspace(-self.N, self.N, self.I, retstep = True)
     def __init__(self, *args, **kwargs):
         super(SimpleLOB_Implementation, self).__init__(*args, **kwargs)
          
