@@ -8,13 +8,13 @@ import numpy as np
 from numpy import exp
 from scipy.special import lambertw
 import scipy as sp
-class Poisson_expUtil_implicit(AbstractImplicitLOB_NeumannBC):
+class Poisson_expUtil_implicit_NeumannBC(AbstractImplicitLOB_NeumannBC):
     '''
     
     Poisson Model using exponential utility and implicit method.
     '''
     def compute_q_space(self):
-        super(Poisson_expUtil_implicit, self).compute_q_space()
+        super(Poisson_expUtil_implicit_NeumannBC, self).compute_q_space()
         self._q_space  = np.linspace(-self.N, self.N, self.I)
         self._delta_q = 1
     
@@ -46,7 +46,7 @@ class Poisson_expUtil_implicit(AbstractImplicitLOB_NeumannBC):
    
     
     def terminal_condition(self):
-        super(Poisson_expUtil_implicit, self).terminal_condition()
+        super(Poisson_expUtil_implicit_NeumannBC, self).terminal_condition()
         return np.ones(len(self.implement_q_space))
 
     def F_1(self, x, beta1, beta2, beta3):
@@ -98,7 +98,7 @@ class Poisson_expUtil_implicit(AbstractImplicitLOB_NeumannBC):
         return [a_curr[1:-1], b_curr[1:-1]]
     
     def linear_system(self, v_curr, curr_control):
-        super(Poisson_expUtil_implicit, self).linear_system( v_curr, curr_control)
+        super(Poisson_expUtil_implicit_NeumannBC, self).linear_system( v_curr, curr_control)
         a_curr, b_curr = curr_control
         co_left = self.A * self.delta_t * np.exp(-(self.kappa + self.gamma) * a_curr)
         co_right = self.A * self.delta_t * np.exp(-(self.kappa + self.gamma) * b_curr)
@@ -116,6 +116,6 @@ class Poisson_expUtil_implicit(AbstractImplicitLOB_NeumannBC):
         
             
     def __init__(self, *args, **kwargs):
-        super(Poisson_expUtil_implicit, self).__init__(*args, **kwargs)
+        super(Poisson_expUtil_implicit_NeumannBC, self).__init__(*args, **kwargs)
         self.half_implement_I = self.half_I + self.extend_space
         

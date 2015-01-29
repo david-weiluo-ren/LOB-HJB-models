@@ -4,14 +4,14 @@ Created on Jan 28, 2015
 @author: weiluo
 '''
 import unittest
-from poisson_expUtil_implicit import Poisson_expUtil_implicit
+from poisson_expUtil_implicit import Poisson_expUtil_implicit_NeumannBC
 from brownianMotion_expUtil_implicit import BrownianMotion_ExpUtil_Implicit_NeumannBC
 from pylab import plot, show
 class Test(unittest.TestCase):
 
     @unittest.skip
     def test_result1(self):
-        myObj = Poisson_expUtil_implicit()
+        myObj = Poisson_expUtil_implicit_NeumannBC()
         myObj.run()
         
        
@@ -27,7 +27,7 @@ class Test(unittest.TestCase):
         plot(myObj.q_space, myObj.b_control[-1])
         show()
     def test_interface1(self):
-        myPoisson = Poisson_expUtil_implicit()
+        myPoisson = Poisson_expUtil_implicit_NeumannBC()
         myBM = BrownianMotion_ExpUtil_Implicit_NeumannBC()
         '''
         for myObj in [myPoisson, myBM]:
