@@ -7,8 +7,32 @@ import unittest
 from poisson_expUtil_implicit import Poisson_expUtil_implicit_NeumannBC
 from brownianMotion_expUtil_implicit import BrownianMotion_ExpUtil_Implicit_NeumannBC
 from pylab import plot, show
+import numpy as np
 class Test(unittest.TestCase):
-
+    
+    def test_seterr(self):
+        params = {"delta_t": 0.0001, "num_time_step": 1000, "gamma": 1.0,\
+                 "A": 20, "kappa":1.5, "sigma_s": 1.0, "N": 10}
+        myObj = Poisson_expUtil_implicit_NeumannBC(**params)
+        myObj.run(1)
+        x = np.true_divide(1.0, 0.0)
+        print x
+        np.seterr(all='raise')
+        self.assertRaisesRegexp(FloatingPointError, lambda x:  np.true_divide(1.0, 0.0))
+        
+        
+    @unittest.SkipTest
+    def test_cannot_converge_params(self):
+        
+        params = {"delta_t": 0.0001, "num_time_step": 1000, "gamma": 1.0,\
+                 "A": 20, "kappa":1.5, "sigma_s": 1.0, "N": 10, "beta": 0.0001}
+        myObj = Poisson_expUtil_implicit_NeumannBC(**params)
+        myObj.run()
+        plot(myObj.a_control[0])
+        show()
+    
+    
+    @unittest.skip("testing skipping")
     def test_constructor(self):
         params = {"new_weight":0.2, "beta":0.0001}
         myObj = Poisson_expUtil_implicit_NeumannBC(extend_space=5, **params)

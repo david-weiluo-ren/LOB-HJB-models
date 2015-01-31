@@ -68,14 +68,19 @@ class Poisson_expUtil_implicit_NeumannBC(AbstractImplicitLOB_NeumannBC):
             b_beta2 = v[i + 1]
             b_beta3 = v[i]
                 
+           
+                
 
-
-
+            
+            #When exp(-np.true_divide(self.gamma*(a_beta1 - self.kappa*a_beta3),self.kappa*a_beta1)) overflow. Try compute manully or another way to compute
+            #without using the lambertW function.
             if abs(a_beta1)<10**(-3):
                 a_curr[i] = np.true_divide(1, self.gamma)*(np.log(1+np.true_divide(self.gamma, self.kappa)) + np.log(v[i-1]) - np.log(v[i]))
                 b_curr[i] = np.true_divide(1, self.gamma)*(np.log(1+np.true_divide(self.gamma, self.kappa)) + np.log(v[i+1]) - np.log(v[i]))
             elif q > 0:
-                a_curr[i] = np.true_divide(1, self.kappa) - np.true_divide(a_beta3, a_beta1) + np.true_divide(1, self.gamma) * sp.real(lambertw( np.true_divide(self.gamma + self.kappa, self.kappa*a_beta1)  * self.gamma * a_beta2 *exp(-np.true_divide(self.gamma*(a_beta1 - self.kappa*a_beta3),self.kappa*a_beta1))))
+                a_curr[i] = np.true_divide(1, self.kappa) - np.true_divide(a_beta3, a_beta1) + np.true_divide(1, self.gamma)\
+                 * sp.real(lambertw( np.true_divide(self.gamma + self.kappa, self.kappa*a_beta1)\
+                                       * self.gamma * a_beta2 *exp(-np.true_divide(self.gamma*(a_beta1 - self.kappa*a_beta3),self.kappa*a_beta1))))
                 if np.true_divide(self.gamma + self.kappa, self.kappa*b_beta1)  * self.gamma * b_beta2 *exp(-np.true_divide(self.gamma*(b_beta1 - self.kappa*b_beta3),self.kappa*b_beta1)) <= - exp(-1):
                     b_curr[i] = self.control_upper_bound
                 else:
@@ -112,6 +117,11 @@ class Poisson_expUtil_implicit_NeumannBC(AbstractImplicitLOB_NeumannBC):
         eq_right[0] = 0
         eq_right[-1] = 0
         return [-self.coef_at_minus_one_helper(co_left), -self.coef_at_plus_one_helper(co_right), self.coef_at_curr_helper(co_mid), eq_right]
+        
+    def run(self, K=None, use_cache=False):
+        old_settings = np.seterr(all='raise')
+        super(Poisson_expUtil_implicit_NeumannBC, self).run( K=K, use_cache=use_cache)
+        np.seterr(**old_settings)
         
         
             
