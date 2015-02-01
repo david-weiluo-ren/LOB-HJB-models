@@ -7,7 +7,9 @@ from abstractDerivedLOB import AbstractImplicitLOB_NeumannBC
 import numpy as np 
 from numpy import exp
 from scipy.special import lambertw
+from scipy.optimize import newton, fmin_tnc
 import scipy as sp
+import math
 class Poisson_expUtil_implicit_NeumannBC(AbstractImplicitLOB_NeumannBC):
     '''
     
@@ -68,34 +70,95 @@ class Poisson_expUtil_implicit_NeumannBC(AbstractImplicitLOB_NeumannBC):
             b_beta2 = v[i + 1]
             b_beta3 = v[i]
                 
-           
-                
+            def function_for_root_helper(beta_1, beta_2, beta_3, x):
+                return -(self.gamma + self.kappa)*beta_2 * np.exp(-self.gamma*x) + self.kappa * beta_1 * x - beta_1 + self.kappa * beta_3
+
+            def function_for_root_derivative_helper(beta_1, beta_2, beta_3, x):
+                return self.gamma * (self.gamma + self.kappa) * beta_2 * np.exp(-self.gamma * x) + self.kappa * beta_1
+            
+            def function_to_minimize_helper(beta_1, beta_2, beta_3, x):
+                return np.exp(-self.gamma*x)*(-beta_1 * x + beta_2 * np.exp(-self.kappa * x)\
+                                       -beta_3)
+            def a_function_for_root(x):
+                return function_for_root_helper(a_beta1, a_beta2, a_beta3, x)
+            def a_function_for_root_derivative(x):
+                return function_for_root_derivative_helper(a_beta1, a_beta2, a_beta3, x)
+            
+            def b_function_for_root(x):
+                return function_for_root_helper(b_beta1, b_beta2, b_beta3, x)
+            def b_function_for_root_derivative(x):
+                return function_for_root_derivative_helper(b_beta1, b_beta2, b_beta3, x)
+            
+            def a_function_to_minimize(x):
+                return function_to_minimize_helper(a_beta1, a_beta2, a_beta3, x)
+            def b_function_to_minimize(x):
+                return function_to_minimize_helper(b_beta1, b_beta2, b_beta3, x)
+               
+              
+            a_beta1_zero_guess = np.true_divide(1, self.gamma)*(np.log(1+np.true_divide(self.gamma, self.kappa)) + np.log(v[i-1]) - np.log(v[i]))
+            b_beta1_zero_guess = np.true_divide(1, self.gamma)*(np.log(1+np.true_divide(self.gamma, self.kappa)) + np.log(v[i+1]) - np.log(v[i]))
 
             
             #When exp(-np.true_divide(self.gamma*(a_beta1 - self.kappa*a_beta3),self.kappa*a_beta1)) overflow. Try compute manully or another way to compute
             #without using the lambertW function.
-            if abs(a_beta1)<10**(-3):
-                a_curr[i] = np.true_divide(1, self.gamma)*(np.log(1+np.true_divide(self.gamma, self.kappa)) + np.log(v[i-1]) - np.log(v[i]))
-                b_curr[i] = np.true_divide(1, self.gamma)*(np.log(1+np.true_divide(self.gamma, self.kappa)) + np.log(v[i+1]) - np.log(v[i]))
-            elif q > 0:
-                a_curr[i] = np.true_divide(1, self.kappa) - np.true_divide(a_beta3, a_beta1) + np.true_divide(1, self.gamma)\
-                 * sp.real(lambertw( np.true_divide(self.gamma + self.kappa, self.kappa*a_beta1)\
-                                       * self.gamma * a_beta2 *exp(-np.true_divide(self.gamma*(a_beta1 - self.kappa*a_beta3),self.kappa*a_beta1))))
-                if np.true_divide(self.gamma + self.kappa, self.kappa*b_beta1)  * self.gamma * b_beta2 *exp(-np.true_divide(self.gamma*(b_beta1 - self.kappa*b_beta3),self.kappa*b_beta1)) <= - exp(-1):
-                    b_curr[i] = self.control_upper_bound
-                else:
-                    b_curr[i] = np.true_divide(1, self.kappa) - np.true_divide(b_beta3, b_beta1) + np.true_divide(1, self.gamma) * sp.real(lambertw( np.true_divide(self.gamma + self.kappa, self.kappa*b_beta1)  * self.gamma * b_beta2 *exp(-np.true_divide(self.gamma*(b_beta1 - self.kappa*b_beta3),self.kappa*b_beta1)), -1))
-
-
+            if a_beta1==0:
+                a_curr[i] = a_beta1_zero_guess
+                b_curr[i] = b_beta1_zero_guess
             else:
-                b_curr[i] = np.true_divide(1, self.kappa) - np.true_divide(b_beta3, b_beta1) + np.true_divide(1, self.gamma) * sp.real(lambertw( np.true_divide(self.gamma + self.kappa, self.kappa*b_beta1)  * self.gamma * b_beta2 *exp(-np.true_divide(self.gamma*(b_beta1 - self.kappa*b_beta3),self.kappa*b_beta1))))
-            
+                
+                if q > 0:
+                    try:
+                        a_curr[i] = np.true_divide(1, self.kappa) - np.true_divide(a_beta3, a_beta1) + np.true_divide(1, self.gamma)\
+                            * sp.real(lambertw( np.true_divide(self.gamma + self.kappa, self.kappa*a_beta1)\
+                                           * self.gamma * a_beta2 *exp(-np.true_divide(self.gamma*(a_beta1 - self.kappa*a_beta3),self.kappa*a_beta1))))
+                        if math.isnan(a_curr[i]):
+                            raise(FloatingPointError)
+                    except FloatingPointError:
+                        a_curr[i] = newton(func = a_function_for_root, x0=a_beta1_zero_guess, fprime = a_function_for_root_derivative)
+                       
+                    try:
+                        if np.true_divide(self.gamma + self.kappa, self.kappa*b_beta1)  * self.gamma * b_beta2 *exp(-np.true_divide(self.gamma*(b_beta1 - self.kappa*b_beta3),self.kappa*b_beta1)) <= - exp(-1):
+                            b_curr[i] = self.control_upper_bound
+                        else:
+                            b_curr[i] = np.true_divide(1, self.kappa) - np.true_divide(b_beta3, b_beta1) + np.true_divide(1, self.gamma) * sp.real(lambertw( np.true_divide(self.gamma + self.kappa, self.kappa*b_beta1)  * self.gamma * b_beta2 *exp(-np.true_divide(self.gamma*(b_beta1 - self.kappa*b_beta3),self.kappa*b_beta1)), -1))
+                    
+                        if math.isnan(b_curr[i]):
+                            raise(FloatingPointError)
+                    except FloatingPointError:
+                        #b_curr[i] = newton(func = b_function_for_root, x0=b_beta1_zero_guess, fprime = b_function_for_root_derivative)
+                        opt_result = fmin_tnc(func=b_function_to_minimize, x0=np.array([b_beta1_zero_guess]), \
+                                fprime=lambda x: np.exp(-self.kappa*x)*b_function_for_root(x), \
+                                bounds=[(self.control_lower_bound, self.control_upper_bound)], disp=0)
+                       
 
-                if np.true_divide(self.gamma + self.kappa, self.kappa*a_beta1)  * self.gamma * a_beta2 *exp(-np.true_divide(self.gamma*(a_beta1 - self.kappa*a_beta3),self.kappa*a_beta1)) <= - exp(-1):
-                    a_curr[i] = self.control_upper_bound
+                        b_curr[i] = opt_result[0][0]
                 else:
-                    a_curr[i] = np.true_divide(1, self.kappa) - np.true_divide(a_beta3, a_beta1) + np.true_divide(1, self.gamma) * sp.real(lambertw( np.true_divide(self.gamma + self.kappa, self.kappa*a_beta1)  * self.gamma * a_beta2 *exp(-np.true_divide(self.gamma*(a_beta1 - self.kappa*a_beta3),self.kappa*a_beta1)), -1))
-                      
+                    try:
+                        b_curr[i] = np.true_divide(1, self.kappa) - np.true_divide(b_beta3, b_beta1)\
+                         + np.true_divide(1, self.gamma) * sp.real(lambertw( np.true_divide(self.gamma + self.kappa, self.kappa*b_beta1) \
+                             * self.gamma * b_beta2 *exp(-np.true_divide(self.gamma*(b_beta1 - self.kappa*b_beta3),self.kappa*b_beta1))))
+                        if math.isnan(b_curr[i]):
+                            raise(FloatingPointError)
+                    except FloatingPointError:
+                        b_curr[i] = newton(func = b_function_for_root, x0=b_beta1_zero_guess, fprime = b_function_for_root_derivative)
+                    
+                    try:
+                        if np.true_divide(self.gamma + self.kappa, self.kappa*a_beta1)  * self.gamma * a_beta2 *exp(-np.true_divide(self.gamma*(a_beta1 - self.kappa*a_beta3),self.kappa*a_beta1)) <= - exp(-1):
+                            a_curr[i] = self.control_upper_bound
+                        else:
+                            a_curr[i] = np.true_divide(1, self.kappa) - np.true_divide(a_beta3, a_beta1)\
+                                                + np.true_divide(1, self.gamma) * sp.real(lambertw( np.true_divide(self.gamma + self.kappa, self.kappa*a_beta1) \
+                                                * self.gamma * a_beta2 *exp(-np.true_divide(self.gamma*(a_beta1 - self.kappa*a_beta3),self.kappa*a_beta1)), -1))
+                        if math.isnan(a_curr[i]):
+                            raise(FloatingPointError)
+                    except FloatingPointError:
+                        #a_curr[i] = newton(func = a_function_for_root, x0=a_beta1_zero_guess, fprime = a_function_for_root_derivative)
+                        opt_result = fmin_tnc(func=a_function_to_minimize, x0=np.array([a_beta1_zero_guess]), \
+                                fprime=lambda x: np.exp(-self.kappa*x)*a_function_for_root(x),\
+                                 bounds=[(self.control_lower_bound, self.control_upper_bound)],disp=0)
+                        a_curr[i] = opt_result[0][0]
+                        
+                          
             a_curr[i] = 0 if a_curr[i] < 0 else a_curr[i]
             b_curr[i] = 0 if b_curr[i] < 0 else b_curr[i]
             a_curr[i] = self.control_upper_bound if self.F_1(a_curr[i], a_beta1, a_beta2, a_beta3)>0 else a_curr[i]
