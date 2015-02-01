@@ -204,14 +204,14 @@ class AbstractImplicitLOB(AbstractLOB):
         while True:
             curr_control = self.feedback_control(v_tmp)
             v_new = self.one_iteration(v_curr, curr_control)
-            if self.close_enough(v_new, v_curr):
+            if self.close_enough(v_new, v_tmp):
                 if self.verbose:
                     print "the {}th iteration converges in {} iterations".format(self.step_index, iter_count),
                 return_control= self.feedback_control(v_new)
                 self._a_control.append(return_control[0])
                 self._b_control.append(return_control[1])
                 return v_new
-            v_tmp = self.new_weight * v_new + (1 - self.new_weight) * v_curr
+            v_tmp = self.new_weight * v_new + (1 - self.new_weight) * v_tmp
             
             iter_count += 1
             if iter_count > self.iter_max:
