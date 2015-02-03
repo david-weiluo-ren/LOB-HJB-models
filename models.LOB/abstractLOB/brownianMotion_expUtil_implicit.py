@@ -3,8 +3,36 @@ Created on Jan 28, 2015
 
 @author: weiluo
 '''
-from abstractDerivedLOB import AbstractImplicitLOB_NeumannBC
-import numpy as np
+from abstractDerivedLOB import AbstractImplicitLOB_sameSlopeBC
+from abstractModelLOB import BrownianMotion_ExpUtil_Implicit
+from BC_helpers import ImplicitLOB_NeumannBC, ImplicitLOB_sameSlopeBC
+class BrownianMotion_ExpUtil_Implicit_NeumannBC(BrownianMotion_ExpUtil_Implicit):
+    def __init__(self, *args, **kwargs):
+        super(BrownianMotion_ExpUtil_Implicit_NeumannBC, self).__init__(ImplicitLOB_NeumannBC, self.linear_system_helper, *args, **kwargs)
+    
+    def linear_system(self, v_curr, curr_control):
+        super(BrownianMotion_ExpUtil_Implicit_NeumannBC, self)\
+        .linear_system( v_curr, curr_control)
+        return self.BC.linear_system(v_curr, curr_control)
+"""
+class BrownianMotion_ExpUtil_Implicit_NeumannBC(AbstractImplicitLOB_NeumannBC, BrownianMotion_ExpUtil_Implicit):
+    def __init__(self, *args, **kwargs):
+        super(BrownianMotion_ExpUtil_Implicit_NeumannBC, self).__init__(*args, **kwargs)
+    
+    def linear_system_helper(self, v_curr, curr_control):
+        return BrownianMotion_ExpUtil_Implicit.linear_system_helper(self, v_curr, curr_control)
+
+"""
+
+class BrownianMotion_ExpUtil_Implicit_sameSlopeBC(BrownianMotion_ExpUtil_Implicit):
+    def __init__(self, *args, **kwargs):
+        super(BrownianMotion_ExpUtil_Implicit_sameSlopeBC, self).__init__(ImplicitLOB_sameSlopeBC, self.linear_system_helper, *args, **kwargs)
+    def linear_system(self, v_curr, curr_control):
+        super(BrownianMotion_ExpUtil_Implicit_sameSlopeBC, self)\
+        .linear_system( v_curr, curr_control)
+        return self.BC.linear_system(v_curr, curr_control)
+
+    """
 class BrownianMotion_ExpUtil_Implicit_NeumannBC(AbstractImplicitLOB_NeumannBC):
     '''
     Basically "secondTry".
@@ -123,7 +151,7 @@ class BrownianMotion_ExpUtil_Implicit_NeumannBC(AbstractImplicitLOB_NeumannBC):
         matrix_data.append(self.equation_right(v_curr, curr_control))
         return matrix_data
 
-
+"""
 
 
     
