@@ -165,8 +165,8 @@ class Poisson_expUtil_implicit_NeumannBC(AbstractImplicitLOB_NeumannBC):
             b_curr[i] = self.control_upper_bound if self.F_1(b_curr[i], b_beta1, b_beta2, b_beta3)>0 else b_curr[i]
         return [a_curr[1:-1], b_curr[1:-1]]
     
-    def linear_system(self, v_curr, curr_control):
-        super(Poisson_expUtil_implicit_NeumannBC, self).linear_system( v_curr, curr_control)
+    def linear_system_helper(self, v_curr, curr_control):
+        super(Poisson_expUtil_implicit_NeumannBC, self).linear_system_helper( v_curr, curr_control)
         a_curr, b_curr = curr_control
         co_left = self.A * self.delta_t * np.exp(-(self.kappa + self.gamma) * a_curr)
         co_right = self.A * self.delta_t * np.exp(-(self.kappa + self.gamma) * b_curr)

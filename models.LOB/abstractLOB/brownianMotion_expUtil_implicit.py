@@ -117,8 +117,8 @@ class BrownianMotion_ExpUtil_Implicit_NeumannBC(AbstractImplicitLOB_NeumannBC):
         
         return self.equation_right_helper(v_curr[1:-1]*self.delta_q)
     
-    def linear_system(self, v_curr, curr_control):
-        super(BrownianMotion_ExpUtil_Implicit_NeumannBC, self).linear_system(v_curr, curr_control)
+    def linear_system_helper(self, v_curr, curr_control):
+        super(BrownianMotion_ExpUtil_Implicit_NeumannBC, self).linear_system_helper(v_curr, curr_control)
         matrix_data = self.linear_system_matrix_helper(v_curr, curr_control)
         matrix_data.append(self.equation_right(v_curr, curr_control))
         return matrix_data

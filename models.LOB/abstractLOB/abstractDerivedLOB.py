@@ -7,6 +7,8 @@ import numpy as np
 from abstractLOB import AbstractImplicitLOB
 import abc
 from _pyio import __metaclass__
+from scipy import sparse
+from abc import abstractmethod
 class AbstractImplicitLOB_NeumannBC(AbstractImplicitLOB):
     '''
     Neumann Boundary Condition.
@@ -41,6 +43,25 @@ class AbstractImplicitLOB_NeumannBC(AbstractImplicitLOB):
         return np.hstack((0, short_arr, 0))
     
     
-    
-    
+    @abstractmethod
+    def linear_system_helper(self, v_curr, curr_control):
+        """
+        should return [co_left, co_right, co_mid, eq_right]
+        
+        each of them should be an array of length implement_I.
+        
+        co_left corresponding to the lower-left part of triangle matrix whose last element would not show up in the triangle matrix.
+        
+        co_right corresponding to the upper-right part of triangle matrix whose first element would not show up in the triangle matrix.
+        """  
+        pass
+    def linear_system(self, v_curr, curr_control):
+        co_left, co_right, co_mid, eq_right = self.linear_system_helper(v_curr, curr_control)
+        data = [co_left, co_mid, co_right]   #mind the sign here.
+        diags = [-1, 0, 1]
+        co_matrix = sparse.spdiags(data, diags, self.implement_I, self.implement_I, format = 'csc')
+       
+        return [eq_right, co_matrix]
+        
+        
     
