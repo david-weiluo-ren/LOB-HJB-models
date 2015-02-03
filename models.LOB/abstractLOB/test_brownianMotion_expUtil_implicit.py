@@ -8,11 +8,25 @@ from brownianMotion_expUtil_implicit import BrownianMotion_ExpUtil_Implicit_Neum
 from pylab import plot, show
 class Test(unittest.TestCase):
     
+    def test_notConverge2(self):
+        params = {"delta_t": 0.0001, "num_time_step": 1000, "gamma": 1.0,\
+                 "A": 20, "kappa":1.5, "sigma_s": 1.0, "N": 3, "beta": 0.1,\
+                 "extend_space":7}
+        myObj = BrownianMotion_ExpUtil_Implicit_NeumannBC(**params)
+        myObj.run(8000)
+    
+        plot(myObj.result[-1])
+        show()
+        plot(myObj._a_control[-1])
+        show()
+    
+    @unittest.SkipTest
     def test_notConverge1(self):
         params = {"delta_t": 0.0001, "num_time_step": 1000, "gamma": 5.0,\
                  "A": 20, "kappa":1.5, "sigma_s": 1.0, "N": 10, "beta": 0.01}
         myObj = BrownianMotion_ExpUtil_Implicit_NeumannBC(**params)
         myObj.run()
+    
         plot(myObj.result[-1])
         show()
         plot(myObj._a_control[-1])

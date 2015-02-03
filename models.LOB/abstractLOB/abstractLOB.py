@@ -196,8 +196,10 @@ class AbstractImplicitLOB(AbstractLOB):
         self.new_weight = new_weight
         self.abs_threshold = abs_threshold
         self.rlt_threshold = rlt_threshold
+        self.index_for_debug = 0
     
     def one_step_back(self, v_curr):
+        self.index_for_debug += 1
         AbstractLOB.one_step_back(self, v_curr)
         v_tmp = v_curr
         iter_count = 0
@@ -225,6 +227,10 @@ class AbstractImplicitLOB(AbstractLOB):
         pass
     
     def close_enough(self, v_new, v_curr):
+        return np.allclose(v_curr, v_new, self.rlt_threshold, self.abs_threshold)\
+            and np.allclose(v_new, v_curr, self.rlt_threshold, self.abs_threshold)
+        
+    def close_enough_old(self, v_new, v_curr):
         zero_index = np.abs(v_curr) < self.abs_threshold
         non_zero_index = ~zero_index
         
