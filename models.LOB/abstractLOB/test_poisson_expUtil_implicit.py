@@ -8,8 +8,9 @@ from poisson_expUtil_implicit import Poisson_expUtil_implicit_NeumannBC
 from brownianMotion_expUtil_implicit import BrownianMotion_ExpUtil_Implicit_NeumannBC
 from pylab import plot, show
 import numpy as np
+import matplotlib.pyplot as plt
 class Test(unittest.TestCase):
-    
+    @unittest.SkipTest
     def test_seterr(self):
         params = {"delta_t": 0.0001, "num_time_step": 1000, "gamma": 1.0,\
                  "A": 20, "kappa":1.5, "sigma_s": 1.0, "N": 10}
@@ -19,7 +20,7 @@ class Test(unittest.TestCase):
         print x
         np.seterr(all='raise')
         self.assertRaisesRegexp(FloatingPointError, lambda x:  np.true_divide(1.0, 0.0))
-    
+    @unittest.SkipTest
     def test_vary_beta1(self):
         params = {"delta_t": 0.0001, "num_time_step": 1000, "gamma": 1.0,\
                  "A": 20, "kappa":1.5, "sigma_s": 1.0, "N": 10}
@@ -38,7 +39,7 @@ class Test(unittest.TestCase):
             plot(myObj_zero_beta.q_space, myObj_zero_beta.result[-1], 'b')
             show()  
     
-    
+    @unittest.SkipTest
     def test_cannot_converge_params2(self):
         
         params = {"delta_t": 0.0001, "num_time_step": 1000, "gamma": 1.0,\
@@ -58,6 +59,7 @@ class Test(unittest.TestCase):
         plot(myObj_zero_beta.q_space, myObj_zero_beta.result[-1], 'b')
         show()
     
+    @unittest.SkipTest
     def test_cannot_converge_params(self):
         
         params = {"delta_t": 0.0001, "num_time_step": 1000, "gamma": 1.0,\
@@ -96,9 +98,29 @@ class Test(unittest.TestCase):
 
         print myObj.implement_q_space[:10]
         print myObj.implement_q_space[-10:]
+    def test_simulate1(self):
+        myObj = Poisson_expUtil_implicit_NeumannBC(gamma = 1, beta = 0, A=5, num_time_step=500)
+        myObj.run()
+        myObj.simulate_forward()
         
+        plt.subplot(221)
+        plt.plot(myObj.simulate_control_a, 'r')
+        plt.plot(myObj.simulate_control_b, 'b')
         
-    
+        plt.subplot(222)
+        plt.plot(myObj.q)
+        
+        plt.subplot(223)
+        plt.plot(myObj.x)
+        
+        plt.subplot(224)
+        plt.plot(myObj.a_control[-1])
+        plt.plot(myObj.b_control[-1])
+        
+        plt.show()
+
+        
+    @unittest.SkipTest
     def test_result1(self):
         myObj = Poisson_expUtil_implicit_NeumannBC()
         myObj.run()
@@ -115,7 +137,7 @@ class Test(unittest.TestCase):
         
         plot(myObj.q_space, myObj.b_control[-1])
         show()
-    
+    @unittest.SkipTest
     def test_interface1(self):
         myPoisson = Poisson_expUtil_implicit_NeumannBC()
         myBM = BrownianMotion_ExpUtil_Implicit_NeumannBC()

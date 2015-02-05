@@ -186,7 +186,38 @@ class Poisson_expUtil_implicit_NeumannBC(AbstractImplicitLOB_NeumannBC):
         super(Poisson_expUtil_implicit_NeumannBC, self).run( K=K, use_cache=use_cache)
         np.seterr(**old_settings)
         
+    
+    
+    def simulate_one_step_forward(self, index):
+        super(Poisson_expUtil_implicit_NeumannBC, self).simulate_one_step_forward(index)
+        curr_control_a, curr_control_b = self.control_at_current_point(index, self.q[-1])
+        a_intensity = self.delta_t * self.A * np.exp(-self.kappa* curr_control_a)
+        b_intensity = self.delta_t * self.A * np.exp(-self.kappa* curr_control_b)
+        a_prob_0 = np.exp(-a_intensity)
+        b_prob_0 = np.exp(-b_intensity)
+        #Here we only want our intensity small enough that with extremely low probability that Poisson event could happen more than twice in a small time interval.
+        random_a = np.random.random()
+        random_b = np.random.random()
+        delta_N_a = 0 if random_a < a_prob_0 else 1
+        delta_N_b = 0 if random_b < b_prob_0 else 1
+        a_prob_1 = np.exp(-a_intensity) * a_intensity
+        b_prob_1 = np.exp(-b_intensity) * b_intensity
+        if random_a > a_prob_0 + a_prob_1:
+            print "too large A_intensity!", index
+        if random_b > b_prob_0 + b_prob_1:
+            print "too large B_intensity!", index
         
+        delta_x = (self.s[-1] + curr_control_a) * delta_N_a - (self.s[-1] - curr_control_b) * delta_N_b
+        delta_q = delta_N_b - delta_N_a
+        delta_s = self.sigma_s*np.sqrt(self.delta_t)*np.random.normal(0,1,1) + self.delta_t * self.beta*(self.A* np.exp(-self.kappa * curr_control_a) * curr_control_a\
+                         - self.A* np.exp(-self.kappa * curr_control_b) * curr_control_b)
+        self.x.append(self.x[-1] + delta_x)
+        self.q.append(self.q[-1] + delta_q)
+        self.s.append(self.s[-1] + delta_s)
+        self.simulate_control_a.append(curr_control_a)
+        self.simulate_control_b.append(curr_control_b)        
+        #self.a_intensity_simulate.append(a_intensity)
+        #self.b_intensity_simulate.append(b_intensity)
             
     def __init__(self, *args, **kwargs):
         super(Poisson_expUtil_implicit_NeumannBC, self).__init__(*args, **kwargs)

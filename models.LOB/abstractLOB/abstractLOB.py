@@ -9,6 +9,7 @@ import abc
 from scipy.sparse.linalg import spsolve
 from scipy import sparse
 from abc import abstractmethod
+from Cython.Shadow import NULL
 class AbstractLOB(object):
     '''
     An abstract model as parents for all LOB models, Brownian Motion or Poisson, exp utility or linear with penalty, with
@@ -105,7 +106,21 @@ class AbstractLOB(object):
 
         #A*exp(-kappa*control_upper_bound) < 10**(-expIntensity_lower_tolerance_power)
         self.control_upper_bound = (np.log(self.A) + np.log(10)*self.expIntensity_lower_tolerance_power)/self.kappa
-
+        
+        self.q_0 = q_0
+        self.x_0 = x_0
+        self.s_0 = s_0
+        
+        self.simulate_control_a = []
+        self.simulate_control_b = []
+        self.q = [q_0]
+        self.q_a = [0]
+        self.q_b = [0]
+        self.x = [x_0]
+        self.s = [s_0]
+        
+        
+        
     def get_extend_space(self):
         return self.__extend_space
 
@@ -166,7 +181,23 @@ class AbstractLOB(object):
         """
         pass
     
+    def init_forward_data(self, q_0 = None, x_0 = None, s_0 = None ):
+        q_0 = self.q_0 if q_0 is None else q_0
+        x_0 = self.x_0 if x_0 is None else x_0
+        s_0 = self.s_0 if s_0 is None else s_0
+        self.simulate_control_a = []
+        self.simulate_control_b = []
+        self.q = [q_0]
+        self.q_a = [0]
+        self.q_b = [0]
+        self.x = [x_0]
+        self.s = [s_0]
+    
+   
+    def simulate_one_step_forward(self, index):
+        pass
     def run(self, K = None, use_cache = False):
+       
         if not use_cache:
             self._data = [[], [], []]  #If no cache should be used, everything is restarted, all previous data are lost.
         
@@ -176,12 +207,34 @@ class AbstractLOB(object):
             K = K - len(self._result) if K > len(self._result) else 0
         v_curr = self.v_init if not use_cache or len(self.result) == 0 else self._result.pop()
            
-        for i in xrange(K):
-            self._result.append(v_curr)
-           
+        for _ in xrange(K):
+            self._result.append(v_curr)      
             v_curr = self.one_step_back(v_curr)
             self.step_index += 1
-             
+    
+    def solve_back(self, K, use_cache):
+        self.run(K, use_cache)
+    
+    def simulate_forward(self, K = None, q_0 = None, x_0 = None, s_0 = None ):
+        self.init_forward_data(q_0, x_0, s_0)
+        
+        for index in xrange(K if (K is not None) else self.num_time_step):
+            self.simulate_one_step_forward(index)
+            
+        return [self.simulate_control_a, self.simulate_control_b,\
+                self.q, self.q_a, self.q_b, self.x, self.s]
+    
+    def combine_solve_forward(self):
+        self.run()
+        self.simulate_forward() 
+    def q_to_index_for_simulate_control(self, q):
+        curr_control_vector_length = len(self._a_control[0])
+        return int(np.true_divide(q, self.delta_q)) + (curr_control_vector_length-1)/2
+  
+    def control_at_current_point(self, index, curr_q):
+        curr_control_a = self._a_control[-1*(index+1)][self.q_to_index_for_simulate_control(self.q[-1])]
+        curr_control_b = self._b_control[-1*(index+1)][self.q_to_index_for_simulate_control(self.q[-1])]
+        return [curr_control_a, curr_control_b]         
 class AbstractImplicitLOB(AbstractLOB):
     
     __metaclass__ = abc.ABCMeta

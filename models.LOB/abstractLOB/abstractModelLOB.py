@@ -1,44 +1,14 @@
 '''
-Created on Jan 28, 2015
+Created on Feb 2, 2015
 
 @author: weiluo
 '''
-from abstractDerivedLOB import AbstractImplicitLOB_sameSlopeBC
-from abstractModelLOB import BrownianMotion_ExpUtil_Implicit
-from BC_helpers import ImplicitLOB_NeumannBC, ImplicitLOB_sameSlopeBC
-class BrownianMotion_ExpUtil_Implicit_NeumannBC(BrownianMotion_ExpUtil_Implicit):
-    def __init__(self, *args, **kwargs):
-        super(BrownianMotion_ExpUtil_Implicit_NeumannBC, self).__init__(ImplicitLOB_NeumannBC, self.linear_system_helper, *args, **kwargs)
-    
-    def linear_system(self, v_curr, curr_control):
-        super(BrownianMotion_ExpUtil_Implicit_NeumannBC, self)\
-        .linear_system( v_curr, curr_control)
-        return self.BC.linear_system(v_curr, curr_control)
-    
-    
-      
-"""
-class BrownianMotion_ExpUtil_Implicit_NeumannBC(AbstractImplicitLOB_NeumannBC, BrownianMotion_ExpUtil_Implicit):
-    def __init__(self, *args, **kwargs):
-        super(BrownianMotion_ExpUtil_Implicit_NeumannBC, self).__init__(*args, **kwargs)
-    
-    def linear_system_helper(self, v_curr, curr_control):
-        return BrownianMotion_ExpUtil_Implicit.linear_system_helper(self, v_curr, curr_control)
-
-"""
-
-class BrownianMotion_ExpUtil_Implicit_sameSlopeBC(BrownianMotion_ExpUtil_Implicit):
-    def __init__(self, *args, **kwargs):
-        super(BrownianMotion_ExpUtil_Implicit_sameSlopeBC, self).__init__(ImplicitLOB_sameSlopeBC, self.linear_system_helper, *args, **kwargs)
-    def linear_system(self, v_curr, curr_control):
-        super(BrownianMotion_ExpUtil_Implicit_sameSlopeBC, self)\
-        .linear_system( v_curr, curr_control)
-        return self.BC.linear_system(v_curr, curr_control)
-
-    """
-class BrownianMotion_ExpUtil_Implicit_NeumannBC(AbstractImplicitLOB_NeumannBC):
+from abstractLOB import AbstractImplicitLOB
+import numpy as np
+class BrownianMotion_ExpUtil_Implicit(AbstractImplicitLOB):
     '''
     Basically "secondTry".
+    Default is using NeumannBC
     '''
 
     @property
@@ -57,7 +27,7 @@ class BrownianMotion_ExpUtil_Implicit_NeumannBC(AbstractImplicitLOB_NeumannBC):
         return self._delta_q
     
     def compute_q_space(self):
-        super(BrownianMotion_ExpUtil_Implicit_NeumannBC, self).compute_q_space()
+        super(BrownianMotion_ExpUtil_Implicit, self).compute_q_space()
         self._q_space, self._delta_q  = np.linspace(-self.N, self.N, self.I, retstep = True)
         
     @property
@@ -68,13 +38,15 @@ class BrownianMotion_ExpUtil_Implicit_NeumannBC(AbstractImplicitLOB_NeumannBC):
     def b_control(self):
         return self._data_helper(self._index_b_control_2darray, self.extend_space - 1, self.extend_space - 1)
     
-    def __init__(self, tolerance_power = 2, *args, **kwargs):
-        super(BrownianMotion_ExpUtil_Implicit_NeumannBC, self).__init__(*args, **kwargs)
+    def __init__(self, BC_class, linear_system_helper, tolerance_power = 2, *args, **kwargs):
+        super(BrownianMotion_ExpUtil_Implicit, self).__init__(*args, **kwargs)
         
-        self.tolerance_power = tolerance_power
+        self.BC = BC_class(linear_system_helper, self.implement_I)
 
+        self.tolerance_power = tolerance_power
+        
     def terminal_condition(self):
-        super(BrownianMotion_ExpUtil_Implicit_NeumannBC, self).terminal_condition()
+        super(BrownianMotion_ExpUtil_Implicit, self).terminal_condition()
         return -1 * np.ones(len(self.implement_q_space))
   
     def fixedData(self, v):
@@ -93,7 +65,7 @@ class BrownianMotion_ExpUtil_Implicit_NeumannBC(AbstractImplicitLOB_NeumannBC):
     
     def feedback_control(self, v):
         
-        super(BrownianMotion_ExpUtil_Implicit_NeumannBC, self).feedback_control(v)
+        super(BrownianMotion_ExpUtil_Implicit, self).feedback_control(v)
         [delta_v_forward, delta_v_backward, delta_v_second_order, v_mid, implement_q_space_mid] = self.fixedData(v)
     
         Delta_a = self.kappa**2*(self.gamma * delta_v_forward - self.gamma * v[1:-1]*(1 + self.beta * implement_q_space_mid))**2 + self.gamma**4 * v[1:-1]**2\
@@ -141,20 +113,50 @@ class BrownianMotion_ExpUtil_Implicit_NeumannBC(AbstractImplicitLOB_NeumannBC):
         
        
         
-        return [-self.coef_at_minus_one_helper(co_left),  -self.coef_at_plus_one_helper(co_right), self.coef_at_curr_helper(co_mid)]
+        return [-self.BC.coef_at_minus_one_helper(co_left),  -self.BC.coef_at_plus_one_helper(co_right), self.BC.coef_at_curr_helper(co_mid)]
         
             
     def equation_right(self, v_curr, curr_control):
         
-        return self.equation_right_helper(v_curr[1:-1]*self.delta_q)
+        return self.BC.equation_right_helper(v_curr[1:-1]*self.delta_q)
     
     def linear_system_helper(self, v_curr, curr_control):
-        super(BrownianMotion_ExpUtil_Implicit_NeumannBC, self).linear_system_helper(v_curr, curr_control)
+
         matrix_data = self.linear_system_matrix_helper(v_curr, curr_control)
         matrix_data.append(self.equation_right(v_curr, curr_control))
         return matrix_data
+    
+    
+      
+    
+    def simulate_one_step_forward(self, index):
+        super(BrownianMotion_ExpUtil_Implicit, self).simulate_one_step_forward(index)
+        curr_control_a, curr_control_b = self.control_at_current_point(index, self.q[-1])
+        drift_q_a = self.A * np.exp(-self.kappa * curr_control_a)
+        drift_q_b = self.A * np.exp(-self.kappa * curr_control_b)
+        delta_B_a =  np.sqrt(drift_q_a) * np.sqrt(self.delta_t)*np.random.normal(0,1,1)
+        delta_B_b =  np.sqrt(drift_q_b) * np.sqrt(self.delta_t)*np.random.normal(0,1,1)
 
-"""
+        delta_q_a  = drift_q_a * self.delta_t + delta_B_a
+        delta_q_b  = drift_q_b * self.delta_t + delta_B_b
 
+        delta_q = delta_q_b - delta_q_a
+        delta_x = (self.s[-1] + curr_control_a) * delta_q_a - (self.s[-1] + curr_control_b) * delta_q_b
+        delta_s = self.beta * self.A * (np.exp(-self.kappa * curr_control_a) * curr_control_a -np.exp(-self.kappa * curr_control_b) * curr_control_b ) * self.delta_t\
+         + self.sigma_s * np.sqrt(self.delta_t) * np.random.normal(0,1,1)
+        self.q.append(self.q[-1] + delta_q)
+        self.q_a.append(self.q_a[-1] + delta_q_a)
+        self.q_b.append(self.q_b[-1] + delta_q_b)
 
+        self.x.append(self.x[-1] + delta_x)        
+        self.s.append(self.s[-1] + delta_s)
+        self.simulate_control_a.append(curr_control_a)
+        self.simulate_control_b.append(curr_control_b)
+    
+    
+    
+    
+    
+    
+    
     
