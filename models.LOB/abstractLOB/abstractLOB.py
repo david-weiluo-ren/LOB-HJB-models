@@ -10,6 +10,8 @@ from scipy.sparse.linalg import spsolve
 from scipy import sparse
 from abc import abstractmethod
 from Cython.Shadow import NULL
+from scipy.linalg import solve 
+from pylab import plot, show
 class AbstractLOB(object):
     '''
     An abstract model as parents for all LOB models, Brownian Motion or Poisson, exp utility or linear with penalty, with
@@ -219,19 +221,30 @@ class AbstractLOB(object):
         self.init_forward_data(q_0, x_0, s_0)
         
         for index in xrange(K if (K is not None) else self.num_time_step):
-            self.simulate_one_step_forward(index)
+            try:
+                self.simulate_one_step_forward(index)
+            except:
+                print "exit current simulation"
+                return [False, self.simulate_control_a, self.simulate_control_b,\
+                self.q, self.q_a, self.q_b, self.x, self.s]
             
-        return [self.simulate_control_a, self.simulate_control_b,\
+            
+        return [True, self.simulate_control_a, self.simulate_control_b,\
                 self.q, self.q_a, self.q_b, self.x, self.s]
     
     def combine_solve_forward(self):
         self.run()
         self.simulate_forward() 
     def q_to_index_for_simulate_control(self, q):
+        if q > self.N or q < -self.N:
+                print q
+                
+                raise Exception("Too large inventory")
         curr_control_vector_length = len(self._a_control[0])
         return int(np.true_divide(q, self.delta_q)) + (curr_control_vector_length-1)/2
   
     def control_at_current_point(self, index, curr_q):
+       
         curr_control_a = self._a_control[-1*(index+1)][self.q_to_index_for_simulate_control(self.q[-1])]
         curr_control_b = self._b_control[-1*(index+1)][self.q_to_index_for_simulate_control(self.q[-1])]
         return [curr_control_a, curr_control_b]         
@@ -243,13 +256,14 @@ class AbstractImplicitLOB(AbstractLOB):
     
     
     def __init__(self, iter_max = 200, new_weight = 0.1, abs_threshold = 10**(-4), rlt_threshold = 10**(-2),\
-                 *args, **kwargs):
+                 use_sparse = True, *args, **kwargs):
         super(AbstractImplicitLOB, self).__init__(*args, **kwargs)
         self.iter_max = iter_max
         self.new_weight = new_weight
         self.abs_threshold = abs_threshold
         self.rlt_threshold = rlt_threshold
         self.index_for_debug = 0
+        self.use_sparse = use_sparse
     
     def one_step_back(self, v_curr):
         self.index_for_debug += 1
@@ -270,6 +284,10 @@ class AbstractImplicitLOB(AbstractLOB):
             
             iter_count += 1
             if iter_count > self.iter_max:
+                print self.index_for_debug
+                for arr in self.a_control:
+                    plot(arr)
+                show()
                 raise Exception('iteration cannot converge!')
     
     @abc.abstractmethod
@@ -300,8 +318,12 @@ class AbstractImplicitLOB(AbstractLOB):
         
         
         eq_right, co_matrix = self.linear_system(v_curr, curr_control)
-        x = spsolve(co_matrix, eq_right)
-        return spsolve(co_matrix, eq_right)
+        if self.use_sparse:
+            
+            return spsolve(co_matrix, eq_right)
+        else:
+            return solve(co_matrix.todense(), eq_right)
+        
     
     @abstractmethod
     def linear_system(self, v_curr, curr_control):

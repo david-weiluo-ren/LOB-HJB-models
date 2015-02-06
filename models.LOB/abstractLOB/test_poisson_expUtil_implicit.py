@@ -4,11 +4,13 @@ Created on Jan 28, 2015
 @author: weiluo
 '''
 import unittest
-from poisson_expUtil_implicit import Poisson_expUtil_implicit_NeumannBC
+from poisson_expUtil_implicit import Poisson_expUtil_implicit_NeumannBC, Poisson_expUtil_implicit_sameSlopeBC
 from brownianMotion_expUtil_implicit import BrownianMotion_ExpUtil_Implicit_NeumannBC
 from pylab import plot, show
 import numpy as np
 import matplotlib.pyplot as plt
+import time
+
 class Test(unittest.TestCase):
     @unittest.SkipTest
     def test_seterr(self):
@@ -98,8 +100,9 @@ class Test(unittest.TestCase):
 
         print myObj.implement_q_space[:10]
         print myObj.implement_q_space[-10:]
+    @unittest.skip("testing skipping")
     def test_simulate1(self):
-        myObj = Poisson_expUtil_implicit_NeumannBC(gamma = 1, beta = 0, A=5, num_time_step=500)
+        myObj = Poisson_expUtil_implicit_NeumannBC(gamma = 1, beta = 0.05, A=5, num_time_step=2000)
         myObj.run()
         myObj.simulate_forward()
         
@@ -114,12 +117,127 @@ class Test(unittest.TestCase):
         plt.plot(myObj.x)
         
         plt.subplot(224)
-        plt.plot(myObj.a_control[-1])
-        plt.plot(myObj.b_control[-1])
+        plt.plot(myObj._a_control[-1])
+        plt.plot(myObj._b_control[-1])
         
         plt.show()
-
+    @unittest.SkipTest
+    def test_simulate_sameSlopeBC_bug1(self):
+        myObj = Poisson_expUtil_implicit_sameSlopeBC(gamma = 1, sigma_s=0.5, beta = 0.0005, A=5, num_time_step=1000, iter_max=500)
+        myObj.run()
         
+        for arr in myObj.a_control:
+            plot(arr)
+        show()
+    @unittest.SkipTest
+    def test_simulate_sameSlopeBC_bug2(self):
+        myObj = Poisson_expUtil_implicit_sameSlopeBC(gamma = 1, sigma_s=0.5, beta = 0, A=5, num_time_step=1000, iter_max=500)
+        myObj.run()
+        
+        for arr in myObj.a_control:
+            plot(arr)
+        show()
+    @unittest.SkipTest   
+    def test_simulate_sameSlopeBC_bug_tryNeumanBC(self):
+        myObj = Poisson_expUtil_implicit_NeumannBC(gamma = 1, sigma_s=0.5, beta = 0, A=5, num_time_step=1000, iter_max=500)
+        myObj.run()
+        
+        for arr in myObj.a_control:
+            plot(arr)
+        show()
+    @unittest.SkipTest    
+    def test_simulate_sameSlopeBC_bug_tryNeumanBC2(self):
+        myObj = Poisson_expUtil_implicit_NeumannBC(gamma = 1, sigma_s=0.5, beta = 0.0005, A=5, num_time_step=500, iter_max=500)
+        myObj.run()
+        
+        for arr in myObj.a_control:
+            plot(arr)
+        show()
+        
+        
+    def test_simulate_Gueant_params_smallBeta(self):
+        myObj = Poisson_expUtil_implicit_NeumannBC(gamma = 0.1,\
+                     sigma_s=0.3, kappa = 0.3, beta = 0.005, A=0.9, num_time_step=20000, iter_max=500)
+        myObj.run()
+        
+        for arr in myObj.a_control:
+            plot(arr)
+        show()
+        
+        for i in xrange(len(myObj.a_control.T)):
+            if not i%5:
+                plot(myObj.a_control.T[i])
+        show()
+    @unittest.SkipTest
+    def test_simulate_Gueant_params(self):
+        myObj = Poisson_expUtil_implicit_NeumannBC(gamma = 0.1,\
+                     sigma_s=0.3, kappa = 0.3, beta = 0, A=0.9, num_time_step=20000, iter_max=500)
+        myObj.run()
+        
+        for arr in myObj.a_control:
+            plot(arr)
+        show()
+        
+        for i in xrange(len(myObj.a_control.T)):
+            if not i%5:
+                plot(myObj.a_control.T[i])
+        show()
+    @unittest.SkipTest    
+    def test_simulate_Gueant_params_not_truncated_at_zero(self):
+        myObj = Poisson_expUtil_implicit_NeumannBC(gamma = 0.1,\
+                     sigma_s=0.3, kappa = 0.3, beta = 0, A=0.9, num_time_step=5000, iter_max=500,truncated_at_zero=False)
+        myObj.run()
+        
+        for arr in myObj.a_control:
+            plot(arr)
+        show()
+        
+        for i in xrange(len(myObj.a_control.T)):
+            if not i%5:
+                plot(myObj.a_control.T[i])
+        show()
+    @unittest.SkipTest    
+    def test_simulate_sameSlopeBC1(self):
+        myObj = Poisson_expUtil_implicit_sameSlopeBC(gamma = 1, beta = 0.05, A=5, num_time_step=2000)
+        myObj.run()
+        myObj.simulate_forward()
+        
+        plt.subplot(221)
+        plt.plot(myObj.simulate_control_a, 'r')
+        plt.plot(myObj.simulate_control_b, 'b')
+        
+        plt.subplot(222)
+        plt.plot(myObj.q)
+        
+        plt.subplot(223)
+        plt.plot(myObj.x)
+        
+        plt.subplot(224)
+        plt.plot(myObj._a_control[-1])
+        plt.plot(myObj._b_control[-1])
+        
+        plt.show()   
+    @unittest.SkipTest     
+    def test_simulate_sameSlopeBC_noSparse1(self):
+        myObj = Poisson_expUtil_implicit_sameSlopeBC(use_sparse = False, gamma = 1, beta = 0.05, A=5, num_time_step=2000)
+        myObj.run()
+        myObj.simulate_forward()
+        
+        plt.subplot(221)
+        plt.plot(myObj.simulate_control_a, 'r')
+        plt.plot(myObj.simulate_control_b, 'b')
+        
+        plt.subplot(222)
+        plt.plot(myObj.q)
+        
+        plt.subplot(223)
+        plt.plot(myObj.x)
+        
+        plt.subplot(224)
+        plt.plot(myObj._a_control[-1])
+        plt.plot(myObj._b_control[-1])
+        
+        plt.show()     
     @unittest.SkipTest
     def test_result1(self):
         myObj = Poisson_expUtil_implicit_NeumannBC()
@@ -168,7 +286,16 @@ class Test(unittest.TestCase):
         
             plot(myObj.q_space, myObj.b_control[-1])
         show()
+        
+    def setUp(self):
+        self.startTime = time.time()
+
+    def tearDown(self):
+        t = time.time() - self.startTime
+        print "%s: %.3f" % (self.id(), t)
 
 if __name__ == "__main__":
     #import sys;sys.argv = ['', 'Test.test_result1']
-    unittest.main()
+    #unittest.main()
+    suite = unittest.TestLoader().loadTestsFromTestCase(Test)
+    unittest.TextTestRunner(verbosity=1).run(suite)

@@ -7,6 +7,8 @@ import unittest
 from brownianMotion_expUtil_implicit import BrownianMotion_ExpUtil_Implicit_NeumannBC
 from pylab import plot, show
 import matplotlib.pyplot as plt
+import numpy as np
+import matplotlib.pyplot as plt
 class Test(unittest.TestCase):
     @unittest.SkipTest
     def test_notConverge2(self):
@@ -52,7 +54,48 @@ class Test(unittest.TestCase):
         show()
         plot(myObj._a_control[-1])
         show()  
+    
+    
+    
+    def test_wierd_simluate_bug(self):
+        myObj_largeT_beta_point1_smallN_smallSigma = BrownianMotion_ExpUtil_Implicit_NeumannBC(gamma = 1,\
+                     sigma_s=0.05, kappa = 0.3, beta = 0.05, A=0.1, num_time_step=20000, iter_max=500,N=12)
+        myObj_largeT_beta_point1_smallN_smallSigma.run()
+        myObj_largeT_beta_1_smallN_s_std = []
+        myObj_largeT_beta_1_smallN_q_std = []
+        for i in xrange(1000):
+            tmp_result = myObj_largeT_beta_point1_smallN_smallSigma.simulate_forward()
+            if tmp_result[0]:
+                myObj_largeT_beta_1_smallN_s_std.append(np.std(myObj_largeT_beta_point1_smallN_smallSigma.s))
+                myObj_largeT_beta_1_smallN_q_std.append(np.std(myObj_largeT_beta_point1_smallN_smallSigma.q))
+            print i,
+       
+        myObj_largeT_beta_0_smallN_smallSigma = BrownianMotion_ExpUtil_Implicit_NeumannBC(gamma = 1,\
+                     sigma_s=0.05, kappa = 0.3, beta = 0, A=0.1, num_time_step=20000, iter_max=500,N=12)
+        myObj_largeT_beta_0_smallN_smallSigma.run()
+        myObj_largeT_beta_0_smallN_s_std = []
+        myObj_largeT_beta_0_smallN_q_std = []
+        for i in xrange(1000):
+            tmp_result = myObj_largeT_beta_0_smallN_smallSigma.simulate_forward()
+            if tmp_result[0]:
+                myObj_largeT_beta_0_smallN_s_std.append(np.std(myObj_largeT_beta_0_smallN_smallSigma.s))
+                myObj_largeT_beta_0_smallN_q_std.append(np.std(myObj_largeT_beta_0_smallN_smallSigma.q))
+            print i,
         
+        
+        upperLimit = int(max(np.max(np.array(myObj_largeT_beta_1_smallN_s_std)),  np.max(np.array(myObj_largeT_beta_0_smallN_s_std))))+1
+        bins = np.linspace(0, upperLimit, 10*upperLimit)
+        plt.hist( myObj_largeT_beta_1_smallN_s_std,bins, color='b')
+        plt.hist(myObj_largeT_beta_0_smallN_s_std,bins,  color='r')   
+        plt.show()
+        
+        
+        upperLimit = int(max(np.max(np.array(myObj_largeT_beta_1_smallN_q_std)),  np.max(np.array(myObj_largeT_beta_0_smallN_q_std))))+1
+        bins = np.linspace(0, upperLimit, 10*upperLimit)
+        plt.hist( myObj_largeT_beta_1_smallN_q_std,bins, color='b')
+        plt.hist(myObj_largeT_beta_0_smallN_q_std,bins,  color='r')   
+        plt.show()
+    @unittest.SkipTest
     def test_forward1(self):
         myObj = BrownianMotion_ExpUtil_Implicit_NeumannBC()
         self.assertEqual(2 * 100, myObj.extend_space)

@@ -3,13 +3,38 @@ Created on Jan 28, 2015
 
 @author: weiluo
 '''
-from abstractDerivedLOB import AbstractImplicitLOB_NeumannBC
+from abstractModelLOB import Poisson_expUtil_implicit
+from BC_helpers import ImplicitLOB_NeumannBC, ImplicitLOB_sameSlopeBC
+
 import numpy as np 
 from numpy import exp
 from scipy.special import lambertw
 from scipy.optimize import newton, fmin_tnc
 import scipy as sp
 import math
+
+class Poisson_expUtil_implicit_NeumannBC(Poisson_expUtil_implicit):
+    def __init__(self, *args, **kwargs):
+        super(Poisson_expUtil_implicit_NeumannBC, self).__init__(ImplicitLOB_NeumannBC, self.linear_system_helper, *args, **kwargs)
+    
+    def linear_system(self, v_curr, curr_control):
+        super(Poisson_expUtil_implicit_NeumannBC, self)\
+        .linear_system( v_curr, curr_control)
+        return self.BC.linear_system(v_curr, curr_control)
+    
+class Poisson_expUtil_implicit_sameSlopeBC(Poisson_expUtil_implicit):
+    def __init__(self, *args, **kwargs):
+        super(Poisson_expUtil_implicit_sameSlopeBC, self).__init__(ImplicitLOB_sameSlopeBC, self.linear_system_helper, *args, **kwargs)
+    
+    def linear_system(self, v_curr, curr_control):
+        super(Poisson_expUtil_implicit_sameSlopeBC, self)\
+        .linear_system( v_curr, curr_control)
+        return self.BC.linear_system(v_curr, curr_control)
+    
+      
+      
+
+"""
 class Poisson_expUtil_implicit_NeumannBC(AbstractImplicitLOB_NeumannBC):
     '''
     
@@ -222,4 +247,4 @@ class Poisson_expUtil_implicit_NeumannBC(AbstractImplicitLOB_NeumannBC):
     def __init__(self, *args, **kwargs):
         super(Poisson_expUtil_implicit_NeumannBC, self).__init__(*args, **kwargs)
         self.half_implement_I = self.half_I + self.extend_space
-        
+"""        
