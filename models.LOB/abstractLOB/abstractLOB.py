@@ -94,6 +94,7 @@ class AbstractLOB(object):
         
         self.num_time_step = num_time_step
         self.T = self.delta_t * self.num_time_step
+        self.t_space = np.linspace(0, self.T, self.num_time_step, endpoint=False)  #[0, self.T]
         self.step_index = 0
         self.v_init = self.terminal_condition()
         

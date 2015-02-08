@@ -16,7 +16,8 @@ class ImplicitLOB_NeumannBC(object):
     def __init__(self, linear_system_helper, implement_I):
         self.linear_system_helper = linear_system_helper
         self.implement_I = implement_I
-    def coef_at_minus_one_helper(self, short_arr, positive=True):
+    @classmethod
+    def coef_at_minus_one_helper(cls, short_arr, positive=True):
         """
         short_arr should be the coef at minus for 
         space = implement_q_space[1],...,implement_q_space[-2]
@@ -26,16 +27,16 @@ class ImplicitLOB_NeumannBC(object):
         """
         append_sign = 1 if positive else -1
         return np.append(short_arr, np.array([1,1]) * append_sign)
-    
-    def coef_at_plus_one_helper(self, short_arr, positive=True):
+    @classmethod
+    def coef_at_plus_one_helper(cls, short_arr, positive=True):
         append_sign = 1 if positive else -1
         return np.hstack((np.array([1,1]) * append_sign, short_arr))
-    
-    def coef_at_curr_helper(self, short_arr, positive=True):
+    @classmethod
+    def coef_at_curr_helper(cls, short_arr, positive=True):
         append_sign = 1 if positive else -1
         return np.hstack((append_sign, short_arr, append_sign))
-    
-    def equation_right_helper(self, short_arr):
+    @classmethod
+    def equation_right_helper(cls, short_arr):
         return np.hstack((0, short_arr, 0))
     def linear_system(self, v_curr, curr_control):
         co_left, co_right, co_mid, eq_right = self.linear_system_helper(v_curr, curr_control)
@@ -58,7 +59,8 @@ class ImplicitLOB_sameSlopeBC(object):
     def __init__(self, linear_system_helper, implement_I):
         self.linear_system_helper = linear_system_helper
         self.implement_I = implement_I
-    def coef_at_minus_one_helper(self, short_arr, positive=True):
+    @classmethod
+    def coef_at_minus_one_helper(cls, short_arr, positive=True):
         """
         short_arr should be the coef at minus for 
         space = implement_q_space[1],...,implement_q_space[-2]
@@ -68,16 +70,16 @@ class ImplicitLOB_sameSlopeBC(object):
         """
         append_sign = 1 if positive else -1
         return np.append(short_arr, np.array([2,2]) * append_sign)
-    
-    def coef_at_plus_one_helper(self, short_arr, positive=True):
+    @classmethod
+    def coef_at_plus_one_helper(cls, short_arr, positive=True):
         append_sign = 1 if positive else -1
         return np.hstack((np.array([2,2]) * append_sign, short_arr))
-    
-    def coef_at_curr_helper(self, short_arr, positive=True):
+    @classmethod
+    def coef_at_curr_helper(cls, short_arr, positive=True):
         append_sign = 1 if positive else -1
         return np.hstack((append_sign, short_arr, append_sign))
-    
-    def equation_right_helper(self, short_arr):
+    @classmethod
+    def equation_right_helper(cls, short_arr):
         return np.hstack((0, short_arr, 0))
     
     
