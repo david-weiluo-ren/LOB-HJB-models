@@ -224,7 +224,8 @@ class AbstractLOB(object):
         for index in xrange(K if (K is not None) else self.num_time_step):
             try:
                 self.simulate_one_step_forward(index)
-            except:
+            except Exception, e:
+                print e
                 print "exit current simulation"
                 return [False, self.simulate_control_a, self.simulate_control_b,\
                 self.q, self.q_a, self.q_b, self.x, self.s]
@@ -256,13 +257,13 @@ class AbstractImplicitLOB(AbstractLOB):
     
     
     
-    def __init__(self, iter_max = 200, new_weight = 0.1, abs_threshold = 10**(-4), rlt_threshold = 10**(-2),\
+    def __init__(self, iter_max = 200, new_weight = 0.1, abs_threshold_power = -4, rlt_threshold_power = -2,\
                  use_sparse = True, *args, **kwargs):
         super(AbstractImplicitLOB, self).__init__(*args, **kwargs)
         self.iter_max = iter_max
         self.new_weight = new_weight
-        self.abs_threshold = abs_threshold
-        self.rlt_threshold = rlt_threshold
+        self.abs_threshold = 10**abs_threshold_power
+        self.rlt_threshold = 10**rlt_threshold_power
         self.index_for_debug = 0
         self.use_sparse = use_sparse
     

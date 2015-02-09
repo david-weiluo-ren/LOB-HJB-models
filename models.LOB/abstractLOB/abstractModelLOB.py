@@ -139,8 +139,8 @@ class BrownianMotion_ExpUtil_Implicit(AbstractImplicitLOB):
         curr_control_a, curr_control_b = self.control_at_current_point(index, self.q[-1])
         drift_q_a = self.A * np.exp(-self.kappa * curr_control_a)
         drift_q_b = self.A * np.exp(-self.kappa * curr_control_b)
-        delta_B_a =  np.sqrt(drift_q_a) * np.sqrt(self.delta_t)*np.random.normal(0,1,1)
-        delta_B_b =  np.sqrt(drift_q_b) * np.sqrt(self.delta_t)*np.random.normal(0,1,1)
+        delta_B_a =  np.sqrt(drift_q_a) * np.sqrt(self.delta_t)*np.random.normal(0,1,1)[0]
+        delta_B_b =  np.sqrt(drift_q_b) * np.sqrt(self.delta_t)*np.random.normal(0,1,1)[0]
 
         delta_q_a  = drift_q_a * self.delta_t + delta_B_a
         delta_q_b  = drift_q_b * self.delta_t + delta_B_b
@@ -148,7 +148,7 @@ class BrownianMotion_ExpUtil_Implicit(AbstractImplicitLOB):
         delta_q = delta_q_b - delta_q_a
         delta_x = (self.s[-1] + curr_control_a) * delta_q_a - (self.s[-1] + curr_control_b) * delta_q_b
         delta_s = self.beta * self.A * (np.exp(-self.kappa * curr_control_a) * curr_control_a -np.exp(-self.kappa * curr_control_b) * curr_control_b ) * self.delta_t\
-         + self.sigma_s * np.sqrt(self.delta_t) * np.random.normal(0,1,1)
+         + self.sigma_s * np.sqrt(self.delta_t) * np.random.normal(0,1,1)[0]
         self.q.append(self.q[-1] + delta_q)
         self.q_a.append(self.q_a[-1] + delta_q_a)
         self.q_b.append(self.q_b[-1] + delta_q_b)
