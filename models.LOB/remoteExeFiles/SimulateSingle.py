@@ -16,7 +16,7 @@ def constructFileName(options):
 def prepareOptions():
     myReader = ImplicitMethodReader()
     parser = myReader.argParser()
-    _simulate_num = 10
+    _simulate_num = 1000
     parser.add_argument('-simulate_num', type = int, default = _simulate_num,\
                         nargs = '?', help="number of trajectories to simulate")
     options = myReader.parserToArgsDict(parser)
