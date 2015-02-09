@@ -28,12 +28,15 @@ class basicReader(object):
         _verbose = None
         _num_time_step = None
         _extend_space = None
-        _expIntensity_lower_tolerance_power = None    
+        _expIntensity_lower_tolerance_power = None  
+          
         parser.add_argument('-type', type = str, default = _type, nargs='?', \
                             help="The type of model, either 'BM' or 'Poisson'")
         parser.add_argument('-BC', type = str, default = _BC, nargs = '?',\
                             help = "The type of boundary condition. \
                             Currently supporting 'Neumann' and 'sameSlope'")
+        parser.add_argument('-A', type = float, nargs='?',\
+                            help = "A")
         parser.add_argument('-gamma', type = float, nargs='?',\
                             help = "gamma")
         parser.add_argument('-kappa', type = float, nargs='?',\
