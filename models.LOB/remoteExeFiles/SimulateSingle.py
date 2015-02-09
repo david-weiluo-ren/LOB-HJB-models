@@ -7,10 +7,10 @@ Created on Feb 8, 2015
 from remoteExeFiles.SaveObj_helpers import ImplicitMethodReader
 import pickle
 import re
-def constructFileName(options):
+def constructFileName(options, directory):
     if len(options)==0:
         return "defaultParams"
-    return re.sub( r'[:,]',"_", re.sub(r'[\'{} ]', "", str(options)))
+    return directory + re.sub( r'[:,]',"_", re.sub(r'[\'{} ]', "", str(options)))
 
 
 def prepareOptions():
@@ -19,8 +19,14 @@ def prepareOptions():
     _simulate_num = 1000
     parser.add_argument('-simulate_num', type = int, default = _simulate_num,\
                         nargs = '?', help="number of trajectories to simulate")
+    
+    _dump_dir = ""
+    parser.add_argument(_dump_dir, type = str, default = _simulate_num,\
+                        nargs = '?', help="the directory containing the dumped objs")
+    
     options = myReader.parserToArgsDict(parser)
-    fileName = constructFileName(options)
+    fileName = constructFileName(options, options['dump_dir'])
+    options.pop('dump_dir')
     simulate_num = options['simulate_num']
     options.pop('simulate_num')
     return [options,  simulate_num, fileName]
