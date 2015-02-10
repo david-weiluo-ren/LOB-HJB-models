@@ -21,7 +21,7 @@ def prepareOptions():
                         nargs = '?', help="number of trajectories to simulate")
     
     _dump_dir = ""
-    parser.add_argument(_dump_dir, type = str, default = _simulate_num,\
+    parser.add_argument("-dump_dir", type = str, default = _simulate_num,\
                         nargs = '?', help="the directory containing the dumped objs")
     
     options = myReader.parserToArgsDict(parser)
