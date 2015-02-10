@@ -101,6 +101,9 @@ class AbstractLOB(object):
         
         self._data = [[], [], []]
         
+        
+        
+        
         self._cache = [None, None, None]
         self._index_result_2darray = 0
         self._index_a_control_2darray = 1
@@ -250,7 +253,30 @@ class AbstractLOB(object):
        
         curr_control_a = self._a_control[-1*(index+1)][self.q_to_index_for_simulate_control(self.q[-1])]
         curr_control_b = self._b_control[-1*(index+1)][self.q_to_index_for_simulate_control(self.q[-1])]
-        return [curr_control_a, curr_control_b]         
+        return [curr_control_a, curr_control_b]     
+    
+    def single_fixed_q_controls(self, q,  control_a_transpose_cache=None, control_b_transpose_cache=None):
+        result = []
+        q_index = self.q_to_index_for_simulate_control(q)
+        if control_a_transpose_cache is None:
+            result.append(np.vstack(self._a_control).T[q_index])
+        else:
+            result.append(control_a_transpose_cache[q_index])
+        if control_b_transpose_cache is None:
+            result.append(np.vstack(self._b_control).T[q_index])
+        else:
+            result.append(control_b_transpose_cache[q_index])
+        return result
+    
+    def  multi_fixed_q_control(self, q_start, q_end, q_step):
+        result = []
+        control_a_transpose_cache = np.vstack(self._a_control).T
+        control_b_transpose_cache = np.vstack(self._b_control).T
+        for q in np.arange(q_start, q_end+q_step, q_step):
+            result.append(self.single_fixed_q_controls(q, control_a_transpose_cache, control_b_transpose_cache))
+
+        
+            
 class AbstractImplicitLOB(AbstractLOB):
     
     __metaclass__ = abc.ABCMeta

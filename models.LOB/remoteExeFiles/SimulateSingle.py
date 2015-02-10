@@ -77,7 +77,7 @@ def summary_mean_var(options,simulate_num,fileName):
    
     print "done with the simulation"
     #return [fileName, myObj, mean_data, var_data]
-    return [fileName,[options, myObj._data], mean_data, var_data]
+    return [fileName,[options, successful_simulate_num, myObj.multi_fixed_q_control(myObj.q_space[0], myObj.q_space[-1], 1)], mean_data, var_data]
 def dumpData(data):
     fileHandler = open(data[0], 'w')
     pickle.dump(data, fileHandler)
