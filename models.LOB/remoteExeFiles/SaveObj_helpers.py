@@ -116,11 +116,12 @@ class ImplicitMethodReader(basicReader):
         return self.constructModelFromOptions_helper(options)
     
     def constructModelFromOptions_helper(self, options):
-        model_type = options['type'].upper()
-        options.pop('type')
-        BC_type = options['BC'].upper()
-        options.pop('BC')
-        return self.all_models[(model_type, BC_type)](**options)
+        options_local = options.copy()
+        model_type = options_local['type'].upper()
+        options_local.pop('type')
+        BC_type = options_local['BC'].upper()
+        options_local.pop('BC')
+        return self.all_models[(model_type, BC_type)](**options_local)
        
 def constructObj_wrapper():
     myReader = ImplicitMethodReader()
