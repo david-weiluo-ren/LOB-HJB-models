@@ -66,9 +66,10 @@ class AbstractLOB(object):
     def _b_control(self):
         return self._data[self._index_b_control_2darray]
     
-    @property
+    @abc.abstractproperty
     def extend_space(self):
-        return self._extend_space
+        #return self._extend_space
+        pass
        
     def __init__(self, gamma = 0.1, A = 1, kappa = 0.1, beta = 0.02, N = 20, half_I = 2000, sigma_s = 0.05,\
                  q_0 = 0, x_0 = 3.0, s_0 = 5.0,  delta_t = 0.01, verbose = False, num_time_step = 100, extend_space = 2,\
@@ -239,7 +240,7 @@ class AbstractLOB(object):
         self.simulate_forward() 
     def q_to_index_for_simulate_control(self, q):
         if q > self.N or q < -self.N:
-                print q
+                print q, self.N
                 
                 raise Exception("Too large inventory")
         curr_control_vector_length = len(self._a_control[0])

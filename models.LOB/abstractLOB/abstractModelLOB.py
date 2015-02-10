@@ -166,6 +166,9 @@ class Poisson_expUtil_implicit(AbstractImplicitLOB):
     
     Poisson Model using exponential utility and implicit method.
     '''
+    @property
+    def extend_space(self):
+        return int(self._extend_space)
     def compute_q_space(self):
         super(Poisson_expUtil_implicit, self).compute_q_space()
         self._q_space  = np.linspace(-self.N, self.N, self.I)
@@ -173,7 +176,7 @@ class Poisson_expUtil_implicit(AbstractImplicitLOB):
     
     @property
     def half_I(self):
-        return self.N
+        return int(self.N)
     
     @property
     def q_space(self):
