@@ -275,7 +275,7 @@ class AbstractLOB(object):
         for q in np.arange(q_start, q_end+q_step, q_step):
             result.append(self.single_fixed_q_controls(q, control_a_transpose_cache, control_b_transpose_cache))
 
-        
+        return result
             
 class AbstractImplicitLOB(AbstractLOB):
     

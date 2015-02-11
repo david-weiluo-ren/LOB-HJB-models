@@ -74,10 +74,17 @@ def summary_mean_var(options,simulate_num,fileName):
         var_data.append(squared_data[i]/successful_simulate_num - mean_data[i]**2)        
    
    
-   
+    data_for_checking = [[], [], []]
+    
+    for i in np.arange(0, len(myObj.result),int(len(myObj.result)/20)):
+        data_for_checking[0].append(myObj.result[i])
+        data_for_checking[1].append(myObj.a_control[i])
+        data_for_checking[2].append(myObj.b_control[i])
+
+        
     print "done with the simulation"
     #return [fileName, myObj, mean_data, var_data]
-    return [fileName,[options, successful_simulate_num, myObj.multi_fixed_q_control(myObj.q_space[0], myObj.q_space[-1], 1)], mean_data, var_data]
+    return [data_for_checking, fileName,[options, successful_simulate_num, myObj.multi_fixed_q_control(myObj.q_space[0], myObj.q_space[-1], 1)], mean_data, var_data]
 def dumpData(data):
     fileHandler = open(data[0], 'w')
     pickle.dump(data, fileHandler)
