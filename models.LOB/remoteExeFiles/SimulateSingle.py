@@ -8,6 +8,7 @@ from remoteExeFiles.SaveObj_helpers import ImplicitMethodReader
 import pickle
 import re
 import numpy as np
+
 def constructFileName(options, directory):
     print directory
     if len(options)==0:
@@ -38,14 +39,7 @@ def prepareOptions():
 def summary_mean_var(options,simulate_num,fileName):
     myReader = ImplicitMethodReader()
     myObj= myReader.constructModelFromOptions_helper(options)
-    simulate_control_a = []
-    simulate_control_b = []
-    simulate_s = []
-    simulate_q = []
-    
-   
-    
-    
+
     mean_data = [0,0,0,0]  #[simulate_control_a_mean, simulate_control_b_mean, simulate_s_mean, simulate_q_mean]
     squared_data = [0, 0, 0, 0] #[simulate_control_a_squared, simulate_control_b_squared, simulate_s_squared, simulate_q_squared]
     
@@ -84,11 +78,49 @@ def summary_mean_var(options,simulate_num,fileName):
         
     print "done with the simulation"
     #return [fileName, myObj, mean_data, var_data]
-    return [data_for_checking, fileName,[options, successful_simulate_num, myObj.multi_fixed_q_control(myObj.q_space[0], myObj.q_space[-1], 1)], mean_data, var_data]
+    return [data_for_checking, fileName,\
+            [options, successful_simulate_num, \
+             myObj.multi_fixed_q_control(myObj.q_space[0], myObj.q_space[-1], 1)], mean_data, var_data]
 def dumpData(data):
     fileHandler = open(data[0], 'w')
     pickle.dump(data, fileHandler)
-    
+
+class LoadSingleData(object):
+
+    def __init__(self, loaded_data):
+        self._loaded_data = loaded_data
+        self.data_for_checking = self._loaded_data[0]
+        self.result_for_checking = self.data_for_checking[0]
+        self.a_control_for_checking = self.data_for_checking[1]
+        self.b_control_for_checking = self.data_for_checking[2]
+        
+        
+        self._fileName = self._loaded_data[1]
+        
+        self.options = self._loaded_data[2][0]
+        self.successful_simulate_num = self._loaded_data[2][1]
+        self.simulated_a_control = [arr[0] for arr in self._loaded_data[2][2]]
+        self.simulated_b_control = [arr[1] for arr in self._loaded_data[2][2]]
+        
+        self.simulated_a_control_mean = self._loaded_data[3][0]
+        self.simulated_b_control_mean = self._loaded_data[3][1]
+        self.simulated_s_mean = self._loaded_data[3][2]
+        self.simulated_q_mean = self._loaded_data[3][3]
+
+
+        self.simulated_a_control_var = self._loaded_data[4][0]
+        self.simulated_b_control_var = self._loaded_data[4][1]
+        self.simulated_s_var = self._loaded_data[4][2]
+        self.simulated_q_var = self._loaded_data[4][3]
+        
+        
+        
+        
+        self.successful_simulate_num = None
+        
+
+
+        
     
 
 if __name__ == '__main__':
@@ -114,4 +146,4 @@ def simulateImplicitSingle(options,simulate_num,fileName):
             simulate_q.append(myObj.q)
     print "done with the simulation"
     return [fileName, myObj, simulate_control_a, simulate_control_b, simulate_s, simulate_q]
-"""  
+"""

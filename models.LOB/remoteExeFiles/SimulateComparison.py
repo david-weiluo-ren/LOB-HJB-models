@@ -3,7 +3,8 @@ Created on Feb 8, 2015
 
 @author: weiluo
 '''
-from remoteExeFiles.SimulateSingle import prepareOptions, dumpData, summary_mean_var
+from remoteExeFiles.SimulateSingle import prepareOptions, dumpData, summary_mean_var, LoadSingleData
+from remoteExeFiles.SaveObj_helpers import ImplicitMethodReader
 def simulateImplicitComparison():
     options,  simulate_num, fileName = prepareOptions()
     fileName += '_comparison'
@@ -18,5 +19,27 @@ def simulateImplicitComparison():
     data.append(summary_mean_var(zeroBetaOptions,  simulate_num, fileName))
     
     dumpData(data)
+
+class LoadMultiData(object):
+    def __init__(self, loaded_data):
+        self._loaded_data = loaded_data
+        self.non_zero_beta_obj = LoadSingleData(self._loaded_data[1])
+        self.zero_beta_obj = LoadSingleData(self._loaded_data[2])
+        self.reader = ImplicitMethodReader()
+
+    def constructNonZeroBetaObj(self):
+        return self.reader.constructModelFromOptions_helper(self.non_zero_beta_obj.options)
+    
+    def constructZeroBetaObj(self):
+        return self.reader.constructModelFromOptions_helper(self.zero_beta_obj.options)
+
+        
+    
+    
+    
+    
+    
+    
+
 if __name__ == '__main__':
     pass
