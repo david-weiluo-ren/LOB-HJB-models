@@ -12,28 +12,21 @@ import matplotlib.pyplot as plt
 import time
 
 class Test(unittest.TestCase):
-    '''
-    @unittest
-    def test_large_space_sameSlope(self):
-        params = {"num_time_step": 1000, "beta": 0.4, "gamma": 0.1,\
-                 "A": 0.1, "kappa":0.2, "sigma_s": 0.1, "N": 20}
-        myObj = Poisson_expUtil_implicit_sameSlopeBC(**params)
-        myObj.run()
-        for arr in myObj.b_control:
-            plot(arr)
-        show()
-    '''
+ 
     
     def test_large_space(self):
-        params = {"num_time_step": 1000, "beta": 0.4, "gamma": 0.1,\
+        params = {"num_time_step": 1000, "beta": 1, "gamma": 0.1,\
                  "A": 0.1, "kappa":0.2, "sigma_s": 0.5, "N": 20}
         myObj = Poisson_expUtil_implicit_sameSlopeBC(**params)
+        myObj.sigma_s = 1
         myObj.run()
         
-        for arr in myObj.b_control:
+        for arr in myObj.b_control[3:4]:
             plot(arr)
-        for arr in myObj.a_control:
+        show()    
+        for arr in myObj.b_control[-6:-5]:
             plot(arr)
+        
         show()
     
     @unittest.SkipTest

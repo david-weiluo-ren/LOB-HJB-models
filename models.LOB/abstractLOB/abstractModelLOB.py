@@ -383,4 +383,5 @@ class Poisson_expUtil_implicit(AbstractImplicitLOB):
         self.half_implement_I = self.half_I + self.extend_space   
         self.BC = BC_class(linear_system_helper, self.implement_I)
         self.truncated_at_zero = truncated_at_zero
+        
     
