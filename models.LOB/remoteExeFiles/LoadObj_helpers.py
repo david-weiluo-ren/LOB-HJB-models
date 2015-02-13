@@ -22,10 +22,10 @@ class LoadObj(object):
     '''
     
 
-    def __init__(self,  dir = "./pickleObjs/"):
+    def __init__(self,  directory = "./pickleObjs/"):
         self.name = None
         self.data = None
-        self.dir = dir
+        self.directory = directory
     def readPiclObj(self, fileName, relative = True):
         if relative:
             fileName = self.dir + fileName

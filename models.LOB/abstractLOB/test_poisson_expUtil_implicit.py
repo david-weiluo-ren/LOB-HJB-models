@@ -12,6 +12,30 @@ import matplotlib.pyplot as plt
 import time
 
 class Test(unittest.TestCase):
+    '''
+    @unittest
+    def test_large_space_sameSlope(self):
+        params = {"num_time_step": 1000, "beta": 0.4, "gamma": 0.1,\
+                 "A": 0.1, "kappa":0.2, "sigma_s": 0.1, "N": 20}
+        myObj = Poisson_expUtil_implicit_sameSlopeBC(**params)
+        myObj.run()
+        for arr in myObj.b_control:
+            plot(arr)
+        show()
+    '''
+    
+    def test_large_space(self):
+        params = {"num_time_step": 1000, "beta": 0.4, "gamma": 0.1,\
+                 "A": 0.1, "kappa":0.2, "sigma_s": 0.5, "N": 20}
+        myObj = Poisson_expUtil_implicit_sameSlopeBC(**params)
+        myObj.run()
+        
+        for arr in myObj.b_control:
+            plot(arr)
+        for arr in myObj.a_control:
+            plot(arr)
+        show()
+    
     @unittest.SkipTest
     def test_seterr(self):
         params = {"delta_t": 0.0001, "num_time_step": 1000, "gamma": 1.0,\
@@ -154,7 +178,7 @@ class Test(unittest.TestCase):
             plot(arr)
         show()
         
-        
+    @unittest.SkipTest    
     def test_simulate_Gueant_params_smallBeta(self):
         myObj = Poisson_expUtil_implicit_NeumannBC(gamma = 0.1,\
                      sigma_s=0.3, kappa = 0.3, beta = 0.005, A=0.9, num_time_step=20000, iter_max=500)

@@ -12,7 +12,7 @@ from scipy.special import lambertw
 from scipy.optimize import newton, fmin_tnc
 import scipy as sp
 import math
-
+from pylab import plot, show
 class Poisson_expUtil_implicit_NeumannBC(Poisson_expUtil_implicit):
     def __init__(self, *args, **kwargs):
         super(Poisson_expUtil_implicit_NeumannBC, self).__init__(ImplicitLOB_NeumannBC, self.linear_system_helper, *args, **kwargs)
@@ -30,10 +30,10 @@ class Poisson_expUtil_implicit_sameSlopeBC(Poisson_expUtil_implicit):
         super(Poisson_expUtil_implicit_sameSlopeBC, self)\
         .linear_system( v_curr, curr_control)
         return self.BC.linear_system(v_curr, curr_control)
-    
-      
-      
 
+
+ 
+      
 """
 class Poisson_expUtil_implicit_NeumannBC(AbstractImplicitLOB_NeumannBC):
     '''
