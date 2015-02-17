@@ -9,7 +9,7 @@ import abc
 from scipy.sparse.linalg import spsolve
 from scipy import sparse
 from abc import abstractmethod
-from Cython.Shadow import NULL
+
 from scipy.linalg import solve 
 from pylab import plot, show
 class AbstractLOB(object):

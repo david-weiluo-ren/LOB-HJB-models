@@ -12,20 +12,51 @@ import matplotlib.pyplot as plt
 import time
 
 class Test(unittest.TestCase):
- 
+   
     
+    @unittest
+    def test_large_space_largeControl(self):
+        params = {"num_time_step": 2000, "beta": 0.1, "gamma": 0.5,\
+                 "A": 0.1, "kappa":0.5, "sigma_s": 0.4, "N": 10, "delta_t":0.005}
+        myObj = Poisson_expUtil_implicit_NeumannBC(**params)
+        myObj.run()
+        
+        for arr in myObj.result:
+            plot(arr)
+        show()  
+    
+    
+    
+    @unittest.SkipTest
+    def test_large_space_largeControl_toolargeResultData(self):
+        params = {"num_time_step": 10000, "beta": 0.1, "gamma": 0.5,\
+                 "A": 0.1, "kappa":0.5, "sigma_s": 0.4, "N": 20}
+        myObj = Poisson_expUtil_implicit_sameSlopeBC(**params)
+        myObj.run()
+        
+        for arr in myObj.a_control:
+            plot(arr)
+        show()  
+        '''  
+        for arr in myObj.b_control:
+            plot(arr)
+        
+        show()
+        '''
+ 
+    @unittest.SkipTest
     def test_large_space(self):
         params = {"num_time_step": 1000, "beta": 1, "gamma": 0.1,\
-                 "A": 0.1, "kappa":0.2, "sigma_s": 0.5, "N": 20}
+                 "A": 0.1, "kappa":0.2, "sigma_s": 1.5, "N": 20}
         myObj = Poisson_expUtil_implicit_sameSlopeBC(**params)
-        myObj.sigma_s = 1
+        #myObj.sigma_s = 1
         myObj.run()
         
         for arr in myObj.b_control[3:4]:
-            plot(arr)
+            plot(np.arange(-20, 21), arr)
         show()    
-        for arr in myObj.b_control[-6:-5]:
-            plot(arr)
+        for arr in myObj.b_control[10:11]:
+            plot(np.arange(-20, 21), arr)
         
         show()
     

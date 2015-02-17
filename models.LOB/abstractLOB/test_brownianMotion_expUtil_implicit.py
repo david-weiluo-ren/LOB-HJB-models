@@ -10,6 +10,18 @@ import matplotlib.pyplot as plt
 import numpy as np
 import matplotlib.pyplot as plt
 class Test(unittest.TestCase):
+    
+    def test_notConverge3(self):
+        params = {"delta_t": 0.0001, "num_time_step": 10000, "gamma": 1.0,\
+                 "A":0.1, "N": 20, "beta": 0.04,\
+                 "q_0":10}
+        myObj = BrownianMotion_ExpUtil_Implicit_NeumannBC(**params)
+        myObj.run()
+        plot(myObj.result[-1])
+        show()
+        plot(myObj._a_control[-1])
+        show()
+    
     @unittest.SkipTest
     def test_notConverge2(self):
         params = {"delta_t": 0.0001, "num_time_step": 1000, "gamma": 1.0,\
@@ -56,7 +68,7 @@ class Test(unittest.TestCase):
         show()  
     
     
-    
+    @unittest.SkipTest
     def test_wierd_simluate_bug(self):
         myObj_largeT_beta_point1_smallN_smallSigma = BrownianMotion_ExpUtil_Implicit_NeumannBC(gamma = 1,\
                      sigma_s=0.05, kappa = 0.3, beta = 0.05, A=0.1, num_time_step=20000, iter_max=500,N=12)

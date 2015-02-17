@@ -30,8 +30,25 @@ class Poisson_expUtil_implicit_sameSlopeBC(Poisson_expUtil_implicit):
         super(Poisson_expUtil_implicit_sameSlopeBC, self)\
         .linear_system( v_curr, curr_control)
         return self.BC.linear_system(v_curr, curr_control)
-
-
+    def one_iteration(self, v_curr, curr_control):
+        x = Poisson_expUtil_implicit.one_iteration(self, v_curr, curr_control)
+        update_head = 0
+        for i in xrange(len(x)):
+            if(x[i]>0):
+                update_head = i
+                break
+        for i in xrange(update_head):
+            x[i] = x[update_head]
+        
+        update_tail = len(x)
+        for i in xrange( len(x)-1, -1, -1):
+            if(x[i]>0):
+                update_tail = i
+                break;
+        for i in xrange(len(x)-1, update_tail, -1):
+            x[i] = x[update_tail]
+        return x
+            
  
       
 """
