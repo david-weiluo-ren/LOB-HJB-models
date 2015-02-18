@@ -147,8 +147,10 @@ class BrownianMotion_ExpUtil_Implicit(AbstractImplicitLOB):
 
         delta_q = delta_q_b - delta_q_a
         delta_x = (self.s[-1] + curr_control_a) * delta_q_a - (self.s[-1] + curr_control_b) * delta_q_b
-        delta_s = self.beta * self.A * (np.exp(-self.kappa * curr_control_a) * curr_control_a -np.exp(-self.kappa * curr_control_b) * curr_control_b ) * self.delta_t\
-         + self.sigma_s * np.sqrt(self.delta_t) * np.random.normal(0,1,1)[0]
+        delta_s_drift_part = self.beta * self.A * (np.exp(-self.kappa * curr_control_a) * curr_control_a -np.exp(-self.kappa * curr_control_b) * curr_control_b ) * self.delta_t\
+         
+         
+        delta_s = delta_s_drift_part + self.sigma_s * np.sqrt(self.delta_t) * np.random.normal(0,1,1)[0]
         self.q.append(self.q[-1] + delta_q)
         self.q_a.append(self.q_a[-1] + delta_q_a)
         self.q_b.append(self.q_b[-1] + delta_q_b)
@@ -158,7 +160,7 @@ class BrownianMotion_ExpUtil_Implicit(AbstractImplicitLOB):
         self.simulate_control_a.append(curr_control_a)
         self.simulate_control_b.append(curr_control_b)
     
-    
+        self.s_drift.append(self.s_drift[-1] + delta_s_drift_part) 
     
     
 class Poisson_expUtil_implicit(AbstractImplicitLOB):
@@ -368,13 +370,15 @@ class Poisson_expUtil_implicit(AbstractImplicitLOB):
         
         delta_x = (self.s[-1] + curr_control_a) * delta_N_a - (self.s[-1] - curr_control_b) * delta_N_b
         delta_q = delta_N_b - delta_N_a
-        delta_s = self.sigma_s*np.sqrt(self.delta_t)*np.random.normal(0,1,1) + self.delta_t * self.beta*(self.A* np.exp(-self.kappa * curr_control_a) * curr_control_a\
+        delta_s_drift_part = self.delta_t * self.beta*(self.A* np.exp(-self.kappa * curr_control_a) * curr_control_a\
                          - self.A* np.exp(-self.kappa * curr_control_b) * curr_control_b)
+        delta_s = self.sigma_s*np.sqrt(self.delta_t)*np.random.normal(0,1,1) +delta_s_drift_part
         self.x.append(self.x[-1] + delta_x)
         self.q.append(self.q[-1] + delta_q)
         self.s.append(self.s[-1] + delta_s)
         self.simulate_control_a.append(curr_control_a)
-        self.simulate_control_b.append(curr_control_b)        
+        self.simulate_control_b.append(curr_control_b) 
+        self.s_drift.append(self.s_drift[-1] + delta_s_drift_part)       
         #self.a_intensity_simulate.append(a_intensity)
         #self.b_intensity_simulate.append(b_intensity)
             

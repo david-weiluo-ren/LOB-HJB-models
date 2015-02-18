@@ -125,7 +125,7 @@ class AbstractLOB(object):
         self.q_b = [0]
         self.x = [x_0]
         self.s = [s_0]
-        
+        self.s_drift = [0]
         
         
     def get_extend_space(self):
@@ -199,6 +199,7 @@ class AbstractLOB(object):
         self.q_b = [0]
         self.x = [x_0]
         self.s = [s_0]
+        self.s_drift=[0]
     
    
     def simulate_one_step_forward(self, index):

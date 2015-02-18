@@ -40,8 +40,8 @@ def summary_mean_var(options,simulate_num,fileName):
     myReader = ImplicitMethodReader()
     myObj= myReader.constructModelFromOptions_helper(options)
 
-    mean_data = [0,0,0,0]  #[simulate_control_a_mean, simulate_control_b_mean, simulate_s_mean, simulate_q_mean]
-    squared_data = [0, 0, 0, 0] #[simulate_control_a_squared, simulate_control_b_squared, simulate_s_squared, simulate_q_squared]
+    mean_data = [0,0,0,0,0]  #[simulate_control_a_mean, simulate_control_b_mean, simulate_s_mean, simulate_q_mean]
+    squared_data = [0, 0, 0, 0,0] #[simulate_control_a_squared, simulate_control_b_squared, simulate_s_squared, simulate_q_squared]
     
     myObj.run()
     print "done with run"
@@ -56,15 +56,16 @@ def summary_mean_var(options,simulate_num,fileName):
             mean_data[1] += np.asarray(myObj.simulate_control_b)
             mean_data[2] += np.asarray(myObj.s)
             mean_data[3] += np.asarray(myObj.q)
-
+            mean_data[4] += np.asarray(myObj.s_drift)
+            
             squared_data[0] += np.asarray(myObj.simulate_control_a)**2
             squared_data[1] += np.asarray(myObj.simulate_control_b)**2
             squared_data[2] += np.asarray(myObj.s)**2
             squared_data[3] += np.asarray(myObj.q)**2
-    
+            squared_data[4] += np.asarray(myObj.s_drift)**2
     mean_data = [array/successful_simulate_num for array in mean_data]
     var_data = []
-    for i in xrange(4):
+    for i in xrange(len(squared_data)):
         var_data.append(squared_data[i]/successful_simulate_num - mean_data[i]**2)        
    
    
@@ -106,12 +107,13 @@ class LoadSingleData(object):
         self.simulated_b_control_mean = self._loaded_data[3][1]
         self.simulated_s_mean = self._loaded_data[3][2]
         self.simulated_q_mean = self._loaded_data[3][3]
-
+        self.simulated_s_drift_mean = self._loaded_data[3][4]
 
         self.simulated_a_control_var = self._loaded_data[4][0]
         self.simulated_b_control_var = self._loaded_data[4][1]
         self.simulated_s_var = self._loaded_data[4][2]
         self.simulated_q_var = self._loaded_data[4][3]
+        self.simulated_s_drift_var = self._loaded_data[4][4]
         
         
         
