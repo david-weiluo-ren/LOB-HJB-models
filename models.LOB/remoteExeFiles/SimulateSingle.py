@@ -56,13 +56,19 @@ def summary_mean_var(options,simulate_num,fileName):
             mean_data[1] += np.asarray(myObj.simulate_control_b)
             mean_data[2] += np.asarray(myObj.s)
             mean_data[3] += np.asarray(myObj.q)
-            mean_data[4] += np.asarray(myObj.s_drift)
+            try:
+                mean_data[4] += np.asarray(myObj.s_drift)
+            except:
+                pass
             
             squared_data[0] += np.asarray(myObj.simulate_control_a)**2
             squared_data[1] += np.asarray(myObj.simulate_control_b)**2
             squared_data[2] += np.asarray(myObj.s)**2
             squared_data[3] += np.asarray(myObj.q)**2
-            squared_data[4] += np.asarray(myObj.s_drift)**2
+            try:
+                squared_data[4] += np.asarray(myObj.s_drift)**2
+            except:
+                pass
     mean_data = [array/successful_simulate_num for array in mean_data]
     var_data = []
     for i in xrange(len(squared_data)):
@@ -107,13 +113,19 @@ class LoadSingleData(object):
         self.simulated_b_control_mean = self._loaded_data[3][1]
         self.simulated_s_mean = self._loaded_data[3][2]
         self.simulated_q_mean = self._loaded_data[3][3]
-        self.simulated_s_drift_mean = self._loaded_data[3][4]
+        try:
+            self.simulated_s_drift_mean = self._loaded_data[3][4]
+        except:
+            self.simulated_s_drift_mean = None
 
         self.simulated_a_control_var = self._loaded_data[4][0]
         self.simulated_b_control_var = self._loaded_data[4][1]
         self.simulated_s_var = self._loaded_data[4][2]
         self.simulated_q_var = self._loaded_data[4][3]
-        self.simulated_s_drift_var = self._loaded_data[4][4]
+        try:
+            self.simulated_s_drift_var = self._loaded_data[4][4]
+        except:
+            self.simulated_s_drift_var = None
         
         
         

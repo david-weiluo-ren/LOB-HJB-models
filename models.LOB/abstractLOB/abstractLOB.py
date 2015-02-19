@@ -98,7 +98,7 @@ class AbstractLOB(object):
         self.t_space = np.linspace(0, self.T, self.num_time_step, endpoint=False)  #[0, self.T]
         self.step_index = 0
         self.v_init = self.terminal_condition()
-        
+        self.failed_simulation = 0
         self._data = [[], [], []]
         
         
@@ -245,7 +245,7 @@ class AbstractLOB(object):
     def q_to_index_for_simulate_control(self, q):
         if q > self.N or q < -self.N:
                 print q, self.N
-                
+                self.failed_simulation += 1
                 raise Exception("Too large inventory")
         curr_control_vector_length = len(self._a_control[0])
         return int(np.true_divide(q, self.delta_q)) + (curr_control_vector_length-1)/2
