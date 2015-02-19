@@ -6,7 +6,7 @@ Created on Feb 8, 2015
 
 from remoteExeFiles.SaveObj_helpers import ImplicitMethodReader
 import pickle
-import re
+import re, random
 import numpy as np
 
 def constructFileName(options, directory):
@@ -27,6 +27,11 @@ def prepareOptions():
     parser.add_argument("-dump_dir", type = str, default = _dump_dir,\
                         nargs = '?', help="the directory containing the dumped objs")
     
+    _random_q_0 = "FALSE"
+    parser.add_argument("-random_q_0", type = str, default = _random_q_0,\
+                        nargs = '?', help="whether or not to use random q_0")
+    
+    
     options = myReader.parserToArgsDict(parser)
     directory = options['dump_dir']
     options.pop('dump_dir')
@@ -34,21 +39,39 @@ def prepareOptions():
     fileName = constructFileName(options, directory)
     simulate_num = options['simulate_num']
     options.pop('simulate_num')
-    return [options,  simulate_num, fileName]
+    
+    random_q_0  =  options['random_q_0'].upper()
+    options.pop("random_q_0")
+    return [options,  simulate_num, fileName, random_q_0]
 
-def summary_mean_var(options,simulate_num,fileName):
+
+
+
+
+
+def summary_mean_var(options,simulate_num,fileName, randomOpt = False):
     myReader = ImplicitMethodReader()
     myObj= myReader.constructModelFromOptions_helper(options)
+
+     
+    myObj.run()
+    print "done with run"
+    summary_mean_var_helper(myObj, simulate_num, options, fileName, randomOpt)
+def summary_mean_var_helper(myObj, simulate_num, options, fileName, randomOpt):
 
     mean_data = [0,0,0,0,0]  #[simulate_control_a_mean, simulate_control_b_mean, simulate_s_mean, simulate_q_mean]
     squared_data = [0, 0, 0, 0,0] #[simulate_control_a_squared, simulate_control_b_squared, simulate_s_squared, simulate_q_squared]
     
-    myObj.run()
-    print "done with run"
-    
     successful_simulate_num = 0
+    q_0_origin = myObj.q_0
+    q_0s = []
     for _ in xrange(simulate_num):
-        tmp_result = myObj.simulate_forward()
+        if not randomOpt:
+            tmp_result = myObj.simulate_forward()
+        else:
+            q_0_random = 2*random.random()*q_0_origin - q_0_origin
+            tmp_result = myObj.simulate_forward(q_0 = q_0_random)
+            q_0s.append(q_0_random)
         if tmp_result[0]:
             successful_simulate_num += 1
             
@@ -87,7 +110,7 @@ def summary_mean_var(options,simulate_num,fileName):
     #return [fileName, myObj, mean_data, var_data]
     return [data_for_checking, fileName,\
             [options, successful_simulate_num, \
-             myObj.multi_fixed_q_control(myObj.q_space[0], myObj.q_space[-1], 1)], mean_data, var_data, myObj.failed_simulation]
+             myObj.multi_fixed_q_control(myObj.q_space[0], myObj.q_space[-1], 1)], mean_data, var_data, myObj.failed_simulation, q_0s]
 def dumpData(data):
     fileHandler = open(data[0], 'w')
     pickle.dump(data, fileHandler)

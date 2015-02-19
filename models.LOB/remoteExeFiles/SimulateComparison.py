@@ -6,17 +6,18 @@ Created on Feb 8, 2015
 from remoteExeFiles.SimulateSingle import prepareOptions, dumpData, summary_mean_var, LoadSingleData
 from remoteExeFiles.SaveObj_helpers import ImplicitMethodReader
 def simulateImplicitComparison():
-    options,  simulate_num, fileName = prepareOptions()
+    options,  simulate_num, fileName, random_q_0 = prepareOptions()
     fileName += '_comparison'
+    random_q_0_opt = False if random_q_0=="False" else True
     if 'beta' in options and options['beta']==0.0:
-        dumpData(summary_mean_var(options,  simulate_num, fileName))
+        dumpData(summary_mean_var(options,  simulate_num, fileName, random_q_0_opt))
         return
     data = [fileName]
     nonZeroBetaOptions = options.copy()
     zeroBetaOptions = options.copy()
-    data.append(summary_mean_var(nonZeroBetaOptions,  simulate_num, fileName))
+    data.append(summary_mean_var(nonZeroBetaOptions,  simulate_num, fileName, random_q_0_opt))
     zeroBetaOptions['beta'] = 0.0
-    data.append(summary_mean_var(zeroBetaOptions,  simulate_num, fileName))
+    data.append(summary_mean_var(zeroBetaOptions,  simulate_num, fileName, random_q_0_opt))
     
     dumpData(data)
 
