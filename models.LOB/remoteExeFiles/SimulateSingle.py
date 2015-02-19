@@ -87,7 +87,7 @@ def summary_mean_var(options,simulate_num,fileName):
     #return [fileName, myObj, mean_data, var_data]
     return [data_for_checking, fileName,\
             [options, successful_simulate_num, \
-             myObj.multi_fixed_q_control(myObj.q_space[0], myObj.q_space[-1], 1)], mean_data, var_data]
+             myObj.multi_fixed_q_control(myObj.q_space[0], myObj.q_space[-1], 1)], mean_data, var_data, myObj.failed_simulation]
 def dumpData(data):
     fileHandler = open(data[0], 'w')
     pickle.dump(data, fileHandler)
@@ -130,7 +130,7 @@ class LoadSingleData(object):
         
         
         
-        self.successful_simulate_num = None
+        self.failed_simulation = self._loaded_data[5]
         
 
 
