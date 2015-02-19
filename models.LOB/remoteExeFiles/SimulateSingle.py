@@ -56,7 +56,7 @@ def summary_mean_var(options,simulate_num,fileName, randomOpt = False):
      
     myObj.run()
     print "done with run"
-    summary_mean_var_helper(myObj, simulate_num, options, fileName, randomOpt)
+    return summary_mean_var_helper(myObj, simulate_num, options, fileName, randomOpt)
 def summary_mean_var_helper(myObj, simulate_num, options, fileName, randomOpt):
 
     mean_data = [0,0,0,0,0]  #[simulate_control_a_mean, simulate_control_b_mean, simulate_s_mean, simulate_q_mean]
@@ -153,7 +153,10 @@ class LoadSingleData(object):
         
         
         
-        self.failed_simulation = self._loaded_data[5]
+        try:
+            self.failed_simulation = self._loaded_data[5]
+        except:
+            self.failed_simulation = None
         
 
 
