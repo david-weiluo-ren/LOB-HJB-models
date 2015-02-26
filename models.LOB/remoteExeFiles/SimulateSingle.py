@@ -65,6 +65,7 @@ def summary_mean_var_helper(myObj, simulate_num, options, fileName, randomOpt):
     successful_simulate_num = 0
     q_0_origin = myObj.q_0
     q_0s = []
+    tmp_data = []
     for _ in xrange(simulate_num):
         if not randomOpt:
             tmp_result = myObj.simulate_forward()
@@ -92,6 +93,11 @@ def summary_mean_var_helper(myObj, simulate_num, options, fileName, randomOpt):
                 squared_data[4] += np.asarray(myObj.s_drift)**2
             except:
                 pass
+            
+            tmp_data.append( np.asarray(myObj.s).std())
+            
+
+            
     mean_data = [array/successful_simulate_num for array in mean_data]
     var_data = []
     for i in xrange(len(squared_data)):
@@ -110,7 +116,7 @@ def summary_mean_var_helper(myObj, simulate_num, options, fileName, randomOpt):
     #return [fileName, myObj, mean_data, var_data]
     return [data_for_checking, fileName,\
             [options, successful_simulate_num, \
-             myObj.multi_fixed_q_control(myObj.q_space[0], myObj.q_space[-1], 1)], mean_data, var_data, myObj.failed_simulation, q_0s]
+             myObj.multi_fixed_q_control(myObj.q_space[0], myObj.q_space[-1], 1)], mean_data, var_data, myObj.failed_simulation, q_0s, tmp_data]
 def dumpData(data):
     fileHandler = open(data[0], 'w')
     pickle.dump(data, fileHandler)

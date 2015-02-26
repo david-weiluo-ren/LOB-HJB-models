@@ -7,6 +7,7 @@ Created on Feb 7, 2015
 import pickle, sys
 import numpy as np
 import matplotlib.pyplot as plt 
+from matplotlib.pyplot import xlabel
 def two_array_hist_plot(first, second, k =50, label_first="first", label_second="second", show_xlabel=""):
     upperLimit = int(max(np.max(np.array(first)),  np.max(np.array(second))))+1
     bins = np.linspace(0, upperLimit, k*upperLimit)
@@ -32,15 +33,17 @@ def draw_q(data, jump = 200):
     ax.errorbar(np.linspace(0, num_steps*time_step, len(data.non_zero_beta_obj.simulated_q_mean))[index],\
             data.non_zero_beta_obj.simulated_q_mean[index],\
             yerr=np.vstack([np.sqrt(data.non_zero_beta_obj.simulated_q_var)[index],
-                              np.sqrt(data.non_zero_beta_obj.simulated_q_var)[index]]))
+                              np.sqrt(data.non_zero_beta_obj.simulated_q_var)[index]]),  label="with price impact")
 
     index = np.arange(0, len(data.zero_beta_obj.simulated_q_mean), 200)
 
     ax.errorbar(np.linspace(0,num_steps*time_step, len(data.zero_beta_obj.simulated_q_mean))[index],\
             data.zero_beta_obj.simulated_q_mean[index],\
             yerr=np.vstack([np.sqrt(data.zero_beta_obj.simulated_q_var)[index],
-                              np.sqrt(data.zero_beta_obj.simulated_q_var)[index]]), color='g')
-
+                              np.sqrt(data.zero_beta_obj.simulated_q_var)[index]]), color='g', label="no price impact")
+    plt.legend(loc="best",prop={'size':9})
+    plt.xlabel("t")
+    plt.ylabel("inventory") 
 
 
     plt.draw()
@@ -60,15 +63,19 @@ def draw_s(data, jump = 200):
     ax.errorbar(np.linspace(0, num_steps*time_step, len(data.non_zero_beta_obj.simulated_s_mean))[index],\
             data.non_zero_beta_obj.simulated_s_mean[index],\
             yerr=np.vstack([np.sqrt(data.non_zero_beta_obj.simulated_s_var)[index],
-                              np.sqrt(data.non_zero_beta_obj.simulated_s_var)[index]]))
+                              np.sqrt(data.non_zero_beta_obj.simulated_s_var)[index]]), label="with price impact")
 
     index = np.arange(0, len(data.zero_beta_obj.simulated_s_mean), 200)
 
     ax.errorbar(np.linspace(0,num_steps*time_step, len(data.zero_beta_obj.simulated_s_mean))[index],\
             data.zero_beta_obj.simulated_s_mean[index],\
             yerr=np.vstack([np.sqrt(data.zero_beta_obj.simulated_s_var)[index],
-                              np.sqrt(data.zero_beta_obj.simulated_s_var)[index]]), color='g')
+                              np.sqrt(data.zero_beta_obj.simulated_s_var)[index]]), color='g', label="no price impact")
+    plt.legend(loc="best",prop={'size':9})
+    plt.xlabel("t")
+    plt.ylabel("price") 
     plt.draw()
+   
 class LoadObj(object):
     '''
     classdocs
