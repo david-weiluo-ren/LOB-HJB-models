@@ -8,7 +8,7 @@ from remoteExeFiles.SaveObj_helpers import ImplicitMethodReader
 def simulateImplicitComparison():
     options,  simulate_num, fileName, random_q_0 = prepareOptions()
     fileName += '_comparison'
-    random_q_0_opt = False if random_q_0=="False" else True
+    random_q_0_opt = False if random_q_0.upper()=="FALSE" else True
     if 'beta' in options and options['beta']==0.0:
         dumpData(summary_mean_var(options,  simulate_num, fileName, random_q_0_opt))
         return
