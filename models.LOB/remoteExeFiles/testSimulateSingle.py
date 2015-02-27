@@ -21,7 +21,7 @@ class Test(unittest.TestCase):
         plot(result[3][3])
         show()
         
-        
+    @unittest.SkipTest    
     def test_simulate_q2(self):
         options={'A': 0.1, 'BC': 'sameslope','N': 16.0,\
                  'beta': 0.08,'delta_t': 0.01,'gamma': 0.5,\
