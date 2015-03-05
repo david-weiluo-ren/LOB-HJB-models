@@ -31,8 +31,8 @@ class SimpleLOB_Implementation(abstractLOB.AbstractLOB):
   
     
    
-    def one_step_back(self, v_curr):
-        abstractLOB.AbstractLOB.one_step_back(self, v_curr)
+    def one_step_back(self, v_curr, index):
+        abstractLOB.AbstractLOB.one_step_back(self, v_curr, index)
         return v_curr
 
 class BrownianMotionExpUtilImplicit(SimpleLOB_Implementation):

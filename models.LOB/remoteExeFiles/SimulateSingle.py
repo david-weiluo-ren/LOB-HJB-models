@@ -8,7 +8,8 @@ from remoteExeFiles.SaveObj_helpers import ImplicitMethodReader
 import pickle
 import re, random
 import numpy as np
-
+from pylab import plot
+from Cython.Shadow import NULL
 def constructFileName(options, directory):
     print directory
     if len(options)==0:
@@ -16,8 +17,15 @@ def constructFileName(options, directory):
     return directory + re.sub( r'[:,]',"_", re.sub(r'[\'{} ]', "", str(options)))
 
 
-def prepareOptions():
-    myReader = ImplicitMethodReader()
+def prepareOptions(_myReader=None):
+    
+    myReader = ImplicitMethodReader() if _myReader is None else _myReader
+    
+    parser = prepareOptionsHelper(myReader)
+    options = myReader.parserToArgsDict(parser)
+    return prepareOptionsHelper2(options)
+
+def prepareOptionsHelper(myReader):
     parser = myReader.argParser()
     _simulate_num = 1000
     parser.add_argument('-simulate_num', type = int, default = _simulate_num,\
@@ -32,7 +40,11 @@ def prepareOptions():
                         nargs = '?', help="whether or not to use random q_0")
     
     
-    options = myReader.parserToArgsDict(parser)
+    return parser
+    
+
+def prepareOptionsHelper2(options):
+
     directory = options['dump_dir']
     options.pop('dump_dir')
 
@@ -45,10 +57,6 @@ def prepareOptions():
     return [options,  simulate_num, fileName, random_q_0]
 
 
-
-
-
-
 def summary_mean_var(options,simulate_num,fileName, randomOpt = False):
     myReader = ImplicitMethodReader()
     myObj= myReader.constructModelFromOptions_helper(options)
@@ -57,7 +65,7 @@ def summary_mean_var(options,simulate_num,fileName, randomOpt = False):
     myObj.run()
     print "done with run"
     return summary_mean_var_helper(myObj, simulate_num, options, fileName, randomOpt)
-def summary_mean_var_helper(myObj, simulate_num, options, fileName, randomOpt):
+def summary_mean_var_helper(myObj, simulate_num, options, fileName, randomOpt, dataCheckingOption=True):
 
     mean_data = [0,0,0,0,0]  #[simulate_control_a_mean, simulate_control_b_mean, simulate_s_mean, simulate_q_mean]
     squared_data = [0, 0, 0, 0,0] #[simulate_control_a_squared, simulate_control_b_squared, simulate_s_squared, simulate_q_squared]
@@ -80,6 +88,7 @@ def summary_mean_var_helper(myObj, simulate_num, options, fileName, randomOpt):
             mean_data[1] += np.asarray(myObj.simulate_control_b)
             mean_data[2] += np.asarray(myObj.s)
             mean_data[3] += np.asarray(myObj.q)
+            
             try:
                 mean_data[4] += np.asarray(myObj.s_drift)
             except:
@@ -98,20 +107,20 @@ def summary_mean_var_helper(myObj, simulate_num, options, fileName, randomOpt):
             
 
             
-    mean_data = [array/successful_simulate_num for array in mean_data]
+    mean_data = [np.true_divide(array,successful_simulate_num) for array in mean_data]
     var_data = []
     for i in xrange(len(squared_data)):
-        var_data.append(squared_data[i]/successful_simulate_num - mean_data[i]**2)        
+        var_data.append(np.true_divide(squared_data[i],successful_simulate_num) - mean_data[i]**2)        
    
    
     data_for_checking = [[], [], []]
-    
-    for i in np.arange(0, len(myObj.result),int(len(myObj.result)/20)):
-        data_for_checking[0].append(myObj.result[i])
-        data_for_checking[1].append(myObj.a_control[i])
-        data_for_checking[2].append(myObj.b_control[i])
+    if(dataCheckingOption):
+        for i in np.arange(0, len(myObj.result),int(len(myObj.result)/20)):
+            data_for_checking[0].append(myObj.result[i])
+            data_for_checking[1].append(myObj.a_control[i])
+            data_for_checking[2].append(myObj.b_control[i])
 
-        
+    
     print "done with the simulation"
     #return [fileName, myObj, mean_data, var_data]
     return [data_for_checking, fileName,\

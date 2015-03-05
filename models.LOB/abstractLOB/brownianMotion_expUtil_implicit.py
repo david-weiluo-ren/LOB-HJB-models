@@ -10,10 +10,10 @@ class BrownianMotion_ExpUtil_Implicit_NeumannBC(BrownianMotion_ExpUtil_Implicit)
     def __init__(self, *args, **kwargs):
         super(BrownianMotion_ExpUtil_Implicit_NeumannBC, self).__init__(ImplicitLOB_NeumannBC, self.linear_system_helper, *args, **kwargs)
     
-    def linear_system(self, v_curr, curr_control):
+    def linear_system(self, v_curr, curr_control, step_index):
         super(BrownianMotion_ExpUtil_Implicit_NeumannBC, self)\
-        .linear_system( v_curr, curr_control)
-        return self.BC.linear_system(v_curr, curr_control)
+        .linear_system( v_curr, curr_control, step_index)
+        return self.BC.linear_system(v_curr, curr_control, step_index)
     
     
       
@@ -30,10 +30,10 @@ class BrownianMotion_ExpUtil_Implicit_NeumannBC(AbstractImplicitLOB_NeumannBC, B
 class BrownianMotion_ExpUtil_Implicit_sameSlopeBC(BrownianMotion_ExpUtil_Implicit):
     def __init__(self, *args, **kwargs):
         super(BrownianMotion_ExpUtil_Implicit_sameSlopeBC, self).__init__(ImplicitLOB_sameSlopeBC, self.linear_system_helper, *args, **kwargs)
-    def linear_system(self, v_curr, curr_control):
+    def linear_system(self, v_curr, curr_control, step_index):
         super(BrownianMotion_ExpUtil_Implicit_sameSlopeBC, self)\
-        .linear_system( v_curr, curr_control)
-        return self.BC.linear_system(v_curr, curr_control)
+        .linear_system( v_curr, curr_control, step_index)
+        return self.BC.linear_system(v_curr, curr_control, step_index)
 
     """
 class BrownianMotion_ExpUtil_Implicit_NeumannBC(AbstractImplicitLOB_NeumannBC):

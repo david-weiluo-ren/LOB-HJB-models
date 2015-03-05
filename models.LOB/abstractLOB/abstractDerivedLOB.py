@@ -57,7 +57,7 @@ class AbstractImplicitLOB_sameSlopeBC(AbstractImplicitLOB):
     
     
     @abstractmethod
-    def linear_system_helper(self, v_curr, curr_control):
+    def linear_system_helper(self, v_curr, curr_control, step_index):
         """
         should return [co_left, co_right, co_mid, eq_right]
         
@@ -69,7 +69,7 @@ class AbstractImplicitLOB_sameSlopeBC(AbstractImplicitLOB):
         """  
         pass
    
-    def linear_system(self, v_curr, curr_control):
+    def linear_system(self, v_curr, curr_control, step_index):
         co_left, co_right, co_mid, eq_right = self.linear_system_helper(v_curr, curr_control)
        
         minus2_diag = np.zeros(self.implement_I)
@@ -123,7 +123,7 @@ class AbstractImplicitLOB_NeumannBC(AbstractImplicitLOB):
     
     
     @abstractmethod
-    def linear_system_helper(self, v_curr, curr_control):
+    def linear_system_helper(self, v_curr, curr_control, step_index):
         """
         should return [co_left, co_right, co_mid, eq_right]
         
@@ -134,8 +134,8 @@ class AbstractImplicitLOB_NeumannBC(AbstractImplicitLOB):
         co_right corresponding to the upper-right part of triangle matrix whose first element would not show up in the triangle matrix.
         """  
         pass
-    def linear_system(self, v_curr, curr_control):
-        co_left, co_right, co_mid, eq_right = self.linear_system_helper(v_curr, curr_control)
+    def linear_system(self, v_curr, curr_control, step_index):
+        co_left, co_right, co_mid, eq_right = self.linear_system_helper(v_curr, curr_control, step_index)
         data = [co_left, co_mid, co_right]   #mind the sign here.
         diags = [-1, 0, 1]
         co_matrix = sparse.spdiags(data, diags, self.implement_I, self.implement_I, format = 'csc')

@@ -103,7 +103,7 @@ class BrownianMotion_ExpUtil_Implicit(AbstractImplicitLOB):
         return [optimal_a, optimal_b]
 
 
-    def linear_system_matrix_helper(self, v_curr, curr_control):
+    def linear_system_matrix_helper(self, v_curr, curr_control, step_index):
         curr_a_star = curr_control[0]
         curr_b_star = curr_control[1]
         co_left = ( self.A * np.exp(- self.kappa * curr_a_star) + np.true_divide(self.A * np.exp(- self.kappa * curr_a_star)\
@@ -125,9 +125,9 @@ class BrownianMotion_ExpUtil_Implicit(AbstractImplicitLOB):
         
         return self.BC.equation_right_helper(v_curr[1:-1]*self.delta_q)
     
-    def linear_system_helper(self, v_curr, curr_control):
+    def linear_system_helper(self, v_curr, curr_control, step_index):
 
-        matrix_data = self.linear_system_matrix_helper(v_curr, curr_control)
+        matrix_data = self.linear_system_matrix_helper(v_curr, curr_control, step_index)
         matrix_data.append(self.equation_right(v_curr, curr_control))
         return matrix_data
     
@@ -326,7 +326,7 @@ class Poisson_expUtil_implicit(AbstractImplicitLOB):
             b_curr[i] = self.control_upper_bound if self.F_1(b_curr[i], b_beta1, b_beta2, b_beta3)>0 else b_curr[i]
         return [a_curr[1:-1], b_curr[1:-1]]
     
-    def linear_system_helper(self, v_curr, curr_control):
+    def linear_system_helper(self, v_curr, curr_control, step_index):
         a_curr, b_curr = curr_control
         co_left = self.A * self.delta_t * np.exp(-(self.kappa + self.gamma) * a_curr)
         co_right = self.A * self.delta_t * np.exp(-(self.kappa + self.gamma) * b_curr)

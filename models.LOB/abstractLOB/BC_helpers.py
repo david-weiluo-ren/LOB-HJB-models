@@ -38,8 +38,8 @@ class ImplicitLOB_NeumannBC(object):
     @classmethod
     def equation_right_helper(cls, short_arr):
         return np.hstack((0, short_arr, 0))
-    def linear_system(self, v_curr, curr_control):
-        co_left, co_right, co_mid, eq_right = self.linear_system_helper(v_curr, curr_control)
+    def linear_system(self, v_curr, curr_control, step_index):
+        co_left, co_right, co_mid, eq_right = self.linear_system_helper(v_curr, curr_control, step_index)
         data = [co_left, co_mid, co_right]   #mind the sign here.
         diags = [-1, 0, 1]
         co_matrix = sparse.spdiags(data, diags, self.implement_I, self.implement_I, format = 'csc')
@@ -85,8 +85,8 @@ class ImplicitLOB_sameSlopeBC(object):
     
    
    
-    def linear_system(self, v_curr, curr_control):
-        co_left, co_right, co_mid, eq_right = self.linear_system_helper(v_curr, curr_control)
+    def linear_system(self, v_curr, curr_control, step_index):
+        co_left, co_right, co_mid, eq_right = self.linear_system_helper(v_curr, curr_control, step_index)
        
         minus2_diag = np.zeros(self.implement_I)
         

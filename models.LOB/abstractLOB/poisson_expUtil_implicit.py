@@ -17,21 +17,21 @@ class Poisson_expUtil_implicit_NeumannBC(Poisson_expUtil_implicit):
     def __init__(self, *args, **kwargs):
         super(Poisson_expUtil_implicit_NeumannBC, self).__init__(ImplicitLOB_NeumannBC, self.linear_system_helper, *args, **kwargs)
     
-    def linear_system(self, v_curr, curr_control):
+    def linear_system(self, v_curr, curr_control, step_index):
         super(Poisson_expUtil_implicit_NeumannBC, self)\
-        .linear_system( v_curr, curr_control)
-        return self.BC.linear_system(v_curr, curr_control)
+        .linear_system( v_curr, curr_control, step_index)
+        return self.BC.linear_system(v_curr, curr_control, step_index)
     
 class Poisson_expUtil_implicit_sameSlopeBC(Poisson_expUtil_implicit):
     def __init__(self, *args, **kwargs):
         super(Poisson_expUtil_implicit_sameSlopeBC, self).__init__(ImplicitLOB_sameSlopeBC, self.linear_system_helper, *args, **kwargs)
     
-    def linear_system(self, v_curr, curr_control):
+    def linear_system(self, v_curr, curr_control, step_index):
         super(Poisson_expUtil_implicit_sameSlopeBC, self)\
-        .linear_system( v_curr, curr_control)
-        return self.BC.linear_system(v_curr, curr_control)
-    def one_iteration(self, v_curr, curr_control):
-        x = Poisson_expUtil_implicit.one_iteration(self, v_curr, curr_control)
+        .linear_system( v_curr, curr_control, step_index)
+        return self.BC.linear_system(v_curr, curr_control, step_index)
+    def one_iteration(self, v_curr, curr_control, step_index):
+        x = Poisson_expUtil_implicit.one_iteration(self, v_curr, curr_control, step_index)
         update_head = 0
         for i in xrange(len(x)):
             if(x[i]>0):
@@ -49,8 +49,43 @@ class Poisson_expUtil_implicit_sameSlopeBC(Poisson_expUtil_implicit):
             x[i] = x[update_tail]
         return x
             
- 
-      
+class Poisson_expUtil_implicit_priceSineDrift_NeumannBC(Poisson_expUtil_implicit_NeumannBC):
+    def __init__(self, theta = 0.1, priceDrift=None,*args, **kwargs):
+        self.priceDriftFunc = priceDrift if priceDrift is not None else self.sineDrift
+
+        super(Poisson_expUtil_implicit_priceSineDrift_NeumannBC, self).__init__(ImplicitLOB_sameSlopeBC, self.linear_system_helper, *args, **kwargs)
+    
+        self.theta = theta
+        self.sineDriftPeriod = 1.0
+    
+    def sineDrift(self, x):
+        return np.sin(x/self.sineDriftPeriod*np.pi*2)*self.theta
+    
+    
+    
+    def linear_system_helper(self, v_curr, curr_control, step_index):
+        a_curr, b_curr = curr_control
+        co_left = self.A * self.delta_t * np.exp(-(self.kappa + self.gamma) * a_curr)
+        co_right = self.A * self.delta_t * np.exp(-(self.kappa + self.gamma) * b_curr)
+        co_mid = 1 + self.delta_t * ( - 0.5 * self.sigma_s**2 * self.gamma**2 * self.implement_q_space[1:-1]**2+\
+                                      self.gamma*self.implement_q_space[1:-1]*self.priceDriftFunc((self.num_time_step-step_index)*self.delta_t) \
+                                      + self.gamma * self.beta * self.A * self.implement_q_space[1:-1] \
+                                      * (np.exp(-self.kappa* a_curr) * a_curr - np.exp(-self.kappa * b_curr) * b_curr)\
+                                       + self.A * (np.exp(-self.kappa* a_curr) + np.exp(-self.kappa* b_curr)))
+        
+        
+        
+        eq_right = v_curr.copy()
+        eq_right[0] = 0
+        eq_right[-1] = 0
+        return [-self.BC.coef_at_minus_one_helper(co_left), -self.BC.coef_at_plus_one_helper(co_right), self.BC.coef_at_curr_helper(co_mid), eq_right]
+   
+     
+    def simulate_one_step_forward(self, index):
+        super(Poisson_expUtil_implicit_priceSineDrift_NeumannBC, self).simulate_one_step_forward(index)
+        self.s[-1] += self.priceDriftFunc(index*self.delta_t)*self.delta_t
+        
+        
 """
 class Poisson_expUtil_implicit_NeumannBC(AbstractImplicitLOB_NeumannBC):
     '''

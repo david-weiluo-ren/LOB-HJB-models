@@ -182,7 +182,7 @@ class AbstractLOB(object):
         pass
     
     @abc.abstractmethod
-    def one_step_back(self, v_curr):
+    def one_step_back(self, v_curr, step_index):
         """
         To compute the value function and optimal feedback controls.
         """
@@ -215,9 +215,9 @@ class AbstractLOB(object):
             K = K - len(self._result) if K > len(self._result) else 0
         v_curr = self.v_init if not use_cache or len(self.result) == 0 else self._result.pop()
            
-        for _ in xrange(K):
+        for i in xrange(K):
             self._result.append(v_curr)      
-            v_curr = self.one_step_back(v_curr)
+            v_curr = self.one_step_back(v_curr, i)
             self.step_index += 1
     
     def solve_back(self, K, use_cache):
@@ -295,14 +295,14 @@ class AbstractImplicitLOB(AbstractLOB):
         self.index_for_debug = 0
         self.use_sparse = use_sparse
     
-    def one_step_back(self, v_curr):
+    def one_step_back(self, v_curr, step_index):
         self.index_for_debug += 1
-        AbstractLOB.one_step_back(self, v_curr)
+        AbstractLOB.one_step_back(self, v_curr, step_index)
         v_tmp = v_curr
         iter_count = 0
         while True:
             curr_control = self.feedback_control(v_tmp)
-            v_new = self.one_iteration(v_curr, curr_control)
+            v_new = self.one_iteration(v_curr, curr_control, step_index)
             if self.close_enough(v_new, v_tmp):
                 if self.verbose:
                     print "the {}th iteration converges in {} iterations".format(self.step_index, iter_count),
@@ -343,11 +343,11 @@ class AbstractImplicitLOB(AbstractLOB):
                 < self.rlt_threshold
     
     
-    def one_iteration(self, v_curr, curr_control):
+    def one_iteration(self, v_curr, curr_control, step_index):
        
         
         
-        eq_right, co_matrix = self.linear_system(v_curr, curr_control)
+        eq_right, co_matrix = self.linear_system(v_curr, curr_control, step_index)
         if self.use_sparse:
             
             return spsolve(co_matrix, eq_right)
@@ -356,7 +356,7 @@ class AbstractImplicitLOB(AbstractLOB):
         
     
     @abstractmethod
-    def linear_system(self, v_curr, curr_control):
+    def linear_system(self, v_curr, curr_control, step_index):
         """
         should return [eq_right, co_matrix]
         

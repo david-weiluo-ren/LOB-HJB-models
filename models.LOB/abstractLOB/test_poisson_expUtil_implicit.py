@@ -12,8 +12,9 @@ import matplotlib.pyplot as plt
 import time
 
 class Test(unittest.TestCase):
-   
     
+    
+
     @unittest
     def test_large_space_largeControl(self):
         params = {"num_time_step": 2000, "beta": 0.1, "gamma": 0.5,\
@@ -24,7 +25,7 @@ class Test(unittest.TestCase):
         for arr in myObj.result:
             plot(arr)
         show()  
-    
+        
     
     
     @unittest.SkipTest
