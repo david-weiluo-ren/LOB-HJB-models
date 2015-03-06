@@ -65,7 +65,7 @@ def summary_mean_var(options,simulate_num,fileName, randomOpt = False):
     myObj.run()
     print "done with run"
     return summary_mean_var_helper(myObj, simulate_num, options, fileName, randomOpt)
-def summary_mean_var_helper(myObj, simulate_num, options, fileName, randomOpt, dataCheckingOption=True):
+def summary_mean_var_helper(myObj, simulate_num, options, fileName, randomOpt, dataCheckingOption=False):
 
     mean_data = [0,0,0,0,0]  #[simulate_control_a_mean, simulate_control_b_mean, simulate_s_mean, simulate_q_mean]
     squared_data = [0, 0, 0, 0,0] #[simulate_control_a_squared, simulate_control_b_squared, simulate_s_squared, simulate_q_squared]
@@ -114,18 +114,19 @@ def summary_mean_var_helper(myObj, simulate_num, options, fileName, randomOpt, d
    
    
     data_for_checking = [[], [], []]
-    if(dataCheckingOption):
+    if dataCheckingOption:
         for i in np.arange(0, len(myObj.result),int(len(myObj.result)/20)):
             data_for_checking[0].append(myObj.result[i])
             data_for_checking[1].append(myObj.a_control[i])
             data_for_checking[2].append(myObj.b_control[i])
 
-    
+    fixed_q_control=[options, successful_simulate_num, \
+             myObj.multi_fixed_q_control(myObj.q_space[0], myObj.q_space[-1], 1)]\
+             if dataCheckingOption else []
     print "done with the simulation"
     #return [fileName, myObj, mean_data, var_data]
     return [data_for_checking, fileName,\
-            [options, successful_simulate_num, \
-             myObj.multi_fixed_q_control(myObj.q_space[0], myObj.q_space[-1], 1)], mean_data, var_data, myObj.failed_simulation, q_0s, tmp_data]
+            fixed_q_control, mean_data, var_data, myObj.failed_simulation, q_0s, tmp_data]
 def dumpData(data):
     fileHandler = open(data[0], 'w')
     pickle.dump(data, fileHandler)
