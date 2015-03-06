@@ -122,7 +122,7 @@ def summary_mean_var_helper(myObj, simulate_num, options, fileName, randomOpt, d
 
     fixed_q_control=[options, successful_simulate_num, \
              myObj.multi_fixed_q_control(myObj.q_space[0], myObj.q_space[-1], 1)]\
-             if dataCheckingOption else []
+             if dataCheckingOption else [options, simulate_num]
     print "done with the simulation"
     #return [fileName, myObj, mean_data, var_data]
     return [data_for_checking, fileName,\
@@ -142,12 +142,16 @@ class LoadSingleData(object):
         
         
         self._fileName = self._loaded_data[1]
-        
-        self.options = self._loaded_data[2][0]
-        self.successful_simulate_num = self._loaded_data[2][1]
-        self.simulated_a_control = [arr[0] for arr in self._loaded_data[2][2]]
-        self.simulated_b_control = [arr[1] for arr in self._loaded_data[2][2]]
-        
+        try:
+            self.options = self._loaded_data[2][0]
+            self.successful_simulate_num = self._loaded_data[2][1]
+            self.simulated_a_control = [arr[0] for arr in self._loaded_data[2][2]]
+            self.simulated_b_control = [arr[1] for arr in self._loaded_data[2][2]]
+        except:
+            self.options = self._loaded_data[2][0]
+            self.successful_simulate_num = self._loaded_data[2][1]
+            self.simulated_a_control = []
+            self.simulated_b_control = []
         self.simulated_a_control_mean = self._loaded_data[3][0]
         self.simulated_b_control_mean = self._loaded_data[3][1]
         self.simulated_s_mean = self._loaded_data[3][2]
