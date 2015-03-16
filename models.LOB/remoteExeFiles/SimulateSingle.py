@@ -122,7 +122,7 @@ def summary_mean_var_helper(myObj, simulate_num, options, fileName, randomOpt, d
 
     fixed_q_control=[options, successful_simulate_num, \
              myObj.multi_fixed_q_control(myObj.q_space[0], myObj.q_space[-1], 1)]\
-             if dataCheckingOption else [options, simulate_num]
+             if dataCheckingOption else [options, successful_simulate_num,[[], []]]
     print "done with the simulation"
     #return [fileName, myObj, mean_data, var_data]
     return [data_for_checking, fileName,\

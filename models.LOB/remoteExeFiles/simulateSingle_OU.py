@@ -21,7 +21,8 @@ def prepareOptions():
     
     parser.add_argument('-half_I_S', type=int, nargs='?',\
                         help="number of grid points of half of s space")
-    
+    parser.add_argument('-s_long_term_mean', type=float, nargs='?',\
+                        help='long term mean of the OU price process')
     options = myReader.parserToArgsDict(parser)
     options.pop("type")
     options.pop("BC")

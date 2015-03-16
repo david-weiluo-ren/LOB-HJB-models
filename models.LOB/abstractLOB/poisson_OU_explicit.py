@@ -74,7 +74,7 @@ class Poisson_explicit_OU_LOB(Abstract_OU_LOB):
         np.seterr(all="raise")
         try:
             v_new[1:-1, 1:-1] = v_curr[1:-1, 1:-1] +self.delta_t*((v_ss - self.gamma * v_s*v_s)*self.sigma_s**2*0.5\
-                                + v_s * self.alpha*(self.s_0-s_space_casted)+\
+                                + v_s * self.alpha*(self.s_long_term_mean-s_space_casted)+\
                                 np.true_divide(self.A, self.kappa+self.gamma)*(np.exp(-self.kappa*optimal_a)*(1+self.beta*self.gamma*v_s) + \
                                 np.exp(-self.kappa*optimal_b)*(1-self.beta*self.gamma*v_s)  )                                             )
         

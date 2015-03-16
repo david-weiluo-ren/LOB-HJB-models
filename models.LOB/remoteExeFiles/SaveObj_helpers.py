@@ -53,7 +53,7 @@ class basicReader(object):
                             help = "q_0")
         parser.add_argument('-x_0', type = float, nargs='?',\
                             help = "x_0")
-        parser.add_argument('-s', type = float, nargs='?',\
+        parser.add_argument('-s_0', type = float, nargs='?',\
                             help = "s_0")
         parser.add_argument('-delta_t', type = float, nargs='?',\
                             help = "delta_t")

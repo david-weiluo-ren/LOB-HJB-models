@@ -36,7 +36,7 @@ class Abstract_OU_LOB(AbstractLOB):
         return self._delta_q
 
     def compute_s_space(self):
-        self._s_space, self._delta_s  = np.linspace(self.s_0-self.half_S, self.s_0+self.half_S, self.I_S, retstep = True)
+        self._s_space, self._delta_s  = np.linspace(self.s_long_term_mean-self.half_S, self.s_long_term_mean+self.half_S, self.I_S, retstep = True)
  
     @property
     def s_space(self):
@@ -50,7 +50,7 @@ class Abstract_OU_LOB(AbstractLOB):
     @abc.abstractmethod
     def terminal_condition_real(self):
         pass
-    def __init__(self, alpha = 5, half_S = 2.0, half_I_S=40, *args, **kwargs):
+    def __init__(self, alpha = 5, half_S = 2.0, half_I_S=40, s_long_term_mean=None, *args, **kwargs):
         super(Abstract_OU_LOB, self).__init__(*args, **kwargs)
 
         self.alpha = alpha
@@ -59,12 +59,13 @@ class Abstract_OU_LOB(AbstractLOB):
         self.half_S = half_S
         self.half_I_S = half_I_S
         self.I_S = 2*self.half_I_S + 1
+        self.s_long_term_mean = s_long_term_mean if s_long_term_mean is not None else self.s_0
+
         self.compute_s_space()
         self.implement_s_space = np.hstack((-np.arange(self.extend_space, 0, -1) * self.delta_s + self.s_space[0],\
                                              self.s_space, \
                                              np.arange(1, self.extend_space+1) * self.delta_s + self.s_space[-1]))
        
-
         self.v_init = self.terminal_condition_real()
     
     def truncate_at_zero(self, arr):
@@ -78,12 +79,12 @@ class Abstract_OU_LOB(AbstractLOB):
         return int(np.true_divide(q, self.delta_q)) + (curr_control_vector_length-1)/2
     
     def s_to_index_for_simulate_control(self, s):
-        if s > self.s_0+self.half_S or s < self.s_0-self.half_S:
+        if s > self.s_long_term_mean+self.half_S or s < self.s_long_term_mean-self.half_S:
                 print "overflow S =", s, self.S
                 self.failed_simulation += 1
                 raise Exception("Too large price")
         curr_control_vector_length = np.shape(self._a_control[0])[0]
-        return int(np.true_divide(s-self.s_0, self.delta_s)) + (curr_control_vector_length-1)/2
+        return int(np.true_divide(s-self.s_long_term_mean, self.delta_s)) + (curr_control_vector_length-1)/2
     
     def control_at_current_point(self, index, curr_q, curr_s):
         
@@ -114,7 +115,7 @@ class Abstract_OU_LOB(AbstractLOB):
         delta_x = (self.s[-1] + curr_control_a) * delta_N_a - (self.s[-1] - curr_control_b) * delta_N_b
         delta_q = delta_N_b - delta_N_a
         delta_s_drift_part = self.delta_t * self.beta*(self.A* np.exp(-self.kappa * curr_control_a) \
-                         - self.A* np.exp(-self.kappa * curr_control_b) ) + self.alpha*(self.s_0-self.s[-1])*self.delta_t
+                         - self.A* np.exp(-self.kappa * curr_control_b) ) + self.alpha*(self.s_long_term_mean-self.s[-1])*self.delta_t
         delta_s = self.sigma_s*np.sqrt(self.delta_t)*np.random.normal(0,1,1) +delta_s_drift_part
         self.x.append(self.x[-1] + delta_x)
         self.q.append(self.q[-1] + delta_q)
