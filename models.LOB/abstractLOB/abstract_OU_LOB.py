@@ -65,8 +65,10 @@ class Abstract_OU_LOB(AbstractLOB):
         self.implement_s_space = np.hstack((-np.arange(self.extend_space, 0, -1) * self.delta_s + self.s_space[0],\
                                              self.s_space, \
                                              np.arange(1, self.extend_space+1) * self.delta_s + self.s_space[-1]))
-       
+        self.implement_S = len(self.implement_s_space)
         self.v_init = self.terminal_condition_real()
+        self.s_drift_impact = [0]
+        self.s_drift_OU = [0]
     
     def truncate_at_zero(self, arr):
         return np.maximum(arr, 0)    
@@ -114,15 +116,19 @@ class Abstract_OU_LOB(AbstractLOB):
         
         delta_x = (self.s[-1] + curr_control_a) * delta_N_a - (self.s[-1] - curr_control_b) * delta_N_b
         delta_q = delta_N_b - delta_N_a
-        delta_s_drift_part = self.delta_t * self.beta*(self.A* np.exp(-self.kappa * curr_control_a) \
-                         - self.A* np.exp(-self.kappa * curr_control_b) ) + self.alpha*(self.s_long_term_mean-self.s[-1])*self.delta_t
-        delta_s = self.sigma_s*np.sqrt(self.delta_t)*np.random.normal(0,1,1) +delta_s_drift_part
+        delta_s_price_impact_part = self.delta_t * self.beta*(self.A* np.exp(-self.kappa * curr_control_a) \
+                         - self.A* np.exp(-self.kappa * curr_control_b) )
+        delta_s_OU_part = self.alpha*(self.s_long_term_mean-self.s[-1])*self.delta_t
+        delta_s_drift_part = delta_s_price_impact_part + delta_s_OU_part
+        delta_s = self.sigma_s*np.sqrt(self.delta_t)*np.random.normal(0,1,1) +delta_s_drift_part 
         self.x.append(self.x[-1] + delta_x)
         self.q.append(self.q[-1] + delta_q)
         self.s.append(self.s[-1] + delta_s)
         self.simulate_control_a.append(curr_control_a)
         self.simulate_control_b.append(curr_control_b) 
-        self.s_drift.append(self.s_drift[-1] + delta_s_drift_part)       
+        self.s_drift.append(self.s_drift[-1] + delta_s_drift_part) 
+        self.s_drift_impact.append(self.s_drift_impact[-1] + delta_s_price_impact_part)
+        self.s_drift_OU.append(self.s_drift_OU[-1] + delta_s_OU_part)      
         #self.a_intensity_simulate.append(a_intensity)
         #self.b_intensity_simulate.append(b_intensity)    
         
