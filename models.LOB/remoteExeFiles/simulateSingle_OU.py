@@ -8,6 +8,7 @@ from remoteExeFiles.SimulateSingle import constructFileName, prepareOptionsHelpe
 summary_mean_var_helper,prepareOptionsHelper2, dumpData
 from remoteExeFiles.SimulateComparison import simulateImplicitComparison
 from abstractLOB.poisson_OU_explicit import Poisson_explicit_OU_LOB
+from abstractLOB.poisson_OU_implicit import Poisson_OU_implicit
 
 def prepareOptions():
     myReader = basicReader()
@@ -47,5 +48,31 @@ def simulateImplicitComparison_OU():
     data.append(summary_mean_var(nonZeroBetaOptions,  simulate_num, fileName, random_q_0_opt))
     zeroBetaOptions['beta'] = 0.0
     data.append(summary_mean_var(zeroBetaOptions,  simulate_num, fileName, random_q_0_opt))
+    
+    dumpData(data)
+    
+def simulateImplicitComparison_OU_obj():
+    options,  simulate_num, fileName, random_q_0 = prepareOptions()
+    fileName += '_comparison'
+    random_q_0_opt = False if random_q_0.upper()=="FALSE" else True
+    if 'beta' in options and options['beta']==0.0:
+        myObj = Poisson_OU_implicit(**options)
+        myObj.run()  
+        myObj.simulate_forward()
+        dumpData([fileName, myObj])
+        return
+    data = [fileName]
+    nonZeroBetaOptions = options.copy()
+    zeroBetaOptions = options.copy()
+    myObj = Poisson_OU_implicit(**nonZeroBetaOptions)
+    myObj.run()  
+    myObj.simulate_forward()
+    
+    data.append(myObj)
+    zeroBetaOptions['beta'] = 0.0
+    myObj = Poisson_OU_implicit(**zeroBetaOptions)
+    myObj.run()  
+    myObj.simulate_forward()
+    data.append(myObj)
     
     dumpData(data)

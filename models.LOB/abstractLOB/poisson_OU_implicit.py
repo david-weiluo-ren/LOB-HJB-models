@@ -29,8 +29,12 @@ class Poisson_OU_implicit(Abstract_OU_LOB):
         self.abs_threshold = 10**abs_threshold_power
         self.rlt_threshold = 10**rlt_threshold_power
         self.use_sparse = use_sparse
-
-
+        self._a_price = []
+        self._b_price = [] 
+        self.simulate_price_a = []
+        self.simulate_price_b = []
+        self.simulate_price_a_test = []
+        self.simulate_price_b_test = []
     '''
     Borrowed from AbstractImplicitLOB starts here
     
@@ -54,6 +58,13 @@ class Poisson_OU_implicit(Abstract_OU_LOB):
         return_control= self.exp_neg_feedback_control(v_curr)
         self._a_control.append(return_control[0])
         self._b_control.append(return_control[1])
+        
+        
+        optimal_price = self.exp_neg_feedback_control(v_curr, True)
+        self._a_price.append(optimal_price[0])
+        self._b_price.append(optimal_price[1])
+
+        
         v_tmp = v_curr
         iter_count = 0
         while True:
@@ -82,7 +93,7 @@ class Poisson_OU_implicit(Abstract_OU_LOB):
     def terminal_condition_real(self):
         return np.outer(self.implement_q_space, self.implement_s_space).reshape((1, -1))[0]
    
-    def exp_neg_feedback_control(self, v):
+    def exp_neg_feedback_control(self, v , price=False):
         v_s_forward = np.zeros(len(v))
         v_s_backward =  np.zeros(len(v))
         v_q_forward = np.ones(len(v))
@@ -98,22 +109,38 @@ class Poisson_OU_implicit(Abstract_OU_LOB):
         implement_q_space_casted = np.repeat(self.implement_q_space, self.implement_S)
         implement_s_space_casted = np.tile(self.implement_s_space, self.implement_I)
         LARGE_NUM = 100
-        
-        
-        exp_neg_optimal_a = np.zeros(len(v))
-        exp_neg_optimal_b = np.zeros(len(v)) 
         a_critical_value = 1 + self.beta * self.gamma * v_s_forward
         b_critical_value = 1 - self.beta * self.gamma * v_s_backward
         
-        exp_neg_optimal_a[a_critical_value>0] = (1+self.gamma/self.kappa)**(-1.0/self.gamma)\
-                * ((a_critical_value[a_critical_value>0])**(1.0/self.gamma))\
-                * np.exp(implement_s_space_casted[a_critical_value>0] - v_q_backward[a_critical_value>0])
-        exp_neg_optimal_b[b_critical_value>0] = (1+self.gamma/self.kappa)**(-1.0/self.gamma)\
-                * ((b_critical_value[b_critical_value>0])**(1.0/self.gamma))\
-                * np.exp(-implement_s_space_casted[b_critical_value>0] + v_q_forward[b_critical_value>0])
-        
-        return [exp_neg_optimal_a, exp_neg_optimal_b]
-    
+        if not price:
+            exp_neg_optimal_a = np.zeros(len(v))
+            exp_neg_optimal_b = np.zeros(len(v)) 
+            
+            exp_neg_optimal_a[a_critical_value>0] = (1+self.gamma/self.kappa)**(-1.0/self.gamma)\
+                    * ((a_critical_value[a_critical_value>0])**(1.0/self.gamma))\
+                    * np.exp(implement_s_space_casted[a_critical_value>0] - v_q_backward[a_critical_value>0])
+            exp_neg_optimal_b[b_critical_value>0] = (1+self.gamma/self.kappa)**(-1.0/self.gamma)\
+                    * ((b_critical_value[b_critical_value>0])**(1.0/self.gamma))\
+                    * np.exp(-implement_s_space_casted[b_critical_value>0] + v_q_forward[b_critical_value>0])
+            
+            return [exp_neg_optimal_a, exp_neg_optimal_b]
+        else :
+            price_a = np.ones(len(v)) * LARGE_NUM
+            price_b = np.ones(len(v)) * LARGE_NUM
+            price_a[a_critical_value > 0] = 1.0/self.gamma * np.log(1 + self.gamma/self.kappa)\
+             - 1.0/self.gamma * np.log(a_critical_value[a_critical_value>0] )\
+             +  v_q_backward[a_critical_value>0]
+            price_b[b_critical_value > 0] = - 1.0/self.gamma * np.log(1 + self.gamma/self.kappa)\
+            +  1.0/self.gamma * np.log(b_critical_value[b_critical_value>0] )\
+            + v_q_forward[b_critical_value>0]
+            return [price_a, price_b]
+            
+            
+            
+            
+            
+            
+            
     def linear_system(self, v_curr, v_iter_old, curr_exp_neg_control, step_index):
         a_curr_exp_neg, b_curr_exp_neg = curr_exp_neg_control
         totalLength = self.implement_I * self.implement_S
@@ -224,8 +251,17 @@ class Poisson_OU_implicit(Abstract_OU_LOB):
         curr_control_b = self._b_control[-1*(index+1)][self.s_to_index_for_simulate_control(curr_s) + self.q_to_index_for_simulate_control(curr_q) * self.implement_S]
         return [curr_control_a, curr_control_b]
 
+
+    def price_at_current_point(self, index, curr_q, curr_s):
+        
+        curr_price_a = self._a_price[-1*(index+1)][self.s_to_index_for_simulate_control(curr_s) + self.q_to_index_for_simulate_control(curr_q) * self.implement_S]
+        curr_price_b = self._b_price[-1*(index+1)][self.s_to_index_for_simulate_control(curr_s) + self.q_to_index_for_simulate_control(curr_q) * self.implement_S]
+        return [curr_price_a, curr_price_b]
+
+
     def simulate_one_step_forward(self, index):
         curr_control_a, curr_control_b = self.control_at_current_point(index, self.q[-1], self.s[-1])
+        curr_price_a, curr_price_b = self.price_at_current_point(index, self.q[-1], self.s[-1])
         LARGW_NUM=100
         
         a_spread = -np.log(curr_control_a) if curr_control_a > 0 else 100
@@ -261,9 +297,59 @@ class Poisson_OU_implicit(Abstract_OU_LOB):
         self.s.append(self.s[-1] + delta_s)
         self.simulate_control_a.append(a_spread)
         self.simulate_control_b.append(b_spread) 
+        self.simulate_price_a.append(curr_price_a)
+        self.simulate_price_b.append(curr_price_b)
+        self.simulate_price_a_test.append(self.s[-1] + a_spread)
+        self.simulate_price_b_test.append(self.s[-1] - b_spread)
+
+
+
         self.s_drift.append(self.s_drift[-1] + delta_s_drift_part) 
         self.s_drift_impact.append(self.s_drift_impact[-1] + delta_s_price_impact_part)
         self.s_drift_OU.append(self.s_drift_OU[-1] + delta_s_OU_part)    
+
+    def init_forward_data(self, q_0 = None, x_0 = None, s_0 = None ):
+        super(Poisson_OU_implicit, self).init_forward_data(q_0, x_0, s_0)
+        self.simulate_price_a = []
+        self.simulate_price_b = []
+        self.simulate_price_a_test = []
+        self.simulate_price_b_test = []
+
+class Poisson_OU_implicit_truncateControlAtZero(Poisson_OU_implicit):
+    
+    def exp_neg_feedback_control(self, v , price=False):
+        if price:
+            price_a, price_b = super(Poisson_OU_implicit_truncateControlAtZero, self).exp_neg_feedback_control(v, price)
+            implement_s_space_casted = np.tile(self.implement_s_space, self.implement_I)
+            price_a = np.maximum(price_a, implement_s_space_casted)
+            price_b = np.minimum(price_b, implement_s_space_casted)
+            return [price_a, price_b]
+        else :
+            exp_neg_optimal = super(Poisson_OU_implicit_truncateControlAtZero, self).exp_neg_feedback_control(v, price)
+            return np.maximum(1, exp_neg_optimal)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
