@@ -74,7 +74,8 @@ class Poisson_OU_implicit(Abstract_OU_LOB):
                 if self.verbose:
                     print "the {}th iteration converges in {} iterations".format(self.step_index, iter_count),
                 
-                print step_index, iter_count
+                if step_index % 500 == 0:
+                    print step_index, iter_count
                 return v_new
             v_tmp = self.new_weight * v_new + (1 - self.new_weight) * v_tmp
             

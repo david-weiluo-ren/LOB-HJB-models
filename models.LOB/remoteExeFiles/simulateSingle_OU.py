@@ -135,7 +135,7 @@ def simulateComparison_OU_sameRandomness():
 
     myObjImplicit.run()
     myObjExplicit.run()
-    for _ in xrange(1):
+    for _ in xrange(simulate_num):
         randomSource = myObjExplicit.generate_random_source()
         myObjExplicit.simulate_forward(useGivenRandom=True, randomSource=randomSource)
         myObjImplicit.simulate_forward(useGivenRandom=True, randomSource=randomSource)
