@@ -223,12 +223,15 @@ class AbstractLOB(object):
     def solve_back(self, K, use_cache):
         self.run(K, use_cache)
     
-    def simulate_forward(self, K = None, q_0 = None, x_0 = None, s_0 = None ):
+    def simulate_forward(self, K = None, q_0 = None, x_0 = None, s_0 = None, useGivenRandom = False, randomSource = None):
         self.init_forward_data(q_0, x_0, s_0)
         
         for index in xrange(K if (K is not None) else self.num_time_step):
             try:
-                self.simulate_one_step_forward(index)
+                if not useGivenRandom:
+                    self.simulate_one_step_forward(index)
+                else:
+                    self.simulate_one_step_forward_use_givenRandom(index, randomSource)
             except Exception, e:
                 print e
                 print "exit current simulation"
