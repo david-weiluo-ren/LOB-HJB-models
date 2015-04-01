@@ -105,8 +105,8 @@ class Abstract_OU_LOB(AbstractLOB):
         b_prob_0 = np.exp(-b_intensity)
         #Here we only want our intensity small enough that with extremely low probability that Poisson event could happen more than twice in a small time interval.
         
-        delta_N_a = 0 if random_a < a_prob_0 else 1
-        delta_N_b = 0 if random_b < b_prob_0 else 1
+        delta_N_a = 0 if random_a <= a_prob_0 else 1
+        delta_N_b = 0 if random_b <= b_prob_0 else 1
         a_prob_1 = np.exp(-a_intensity) * a_intensity
         b_prob_1 = np.exp(-b_intensity) * b_intensity
         if random_a > a_prob_0 + a_prob_1:

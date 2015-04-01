@@ -128,13 +128,14 @@ def simulateComparison_OU_sameRandomness():
     fileName += '_comparison'
     random_q_0_opt = False if random_q_0.upper()=="FALSE" else True
    
-    data = [fileName[:80]]
+    data = [fileName[:80], options_forImplicit]
     
-    myObjImplicit = Poisson_OU_implicit(**options_forImplicit)
+    myObjImplicit = Poisson_OU_implicit_truncateControlAtZero(**options_forImplicit)
     myObjExplicit = Poisson_explicit_OU_LOB(**options_forExplicit)
 
     myObjImplicit.run()
     myObjExplicit.run()
+    sim_data = []
     for _ in xrange(simulate_num):
         randomSource = myObjExplicit.generate_random_source()
         myObjExplicit.simulate_forward(useGivenRandom=True, randomSource=randomSource)
@@ -142,7 +143,7 @@ def simulateComparison_OU_sameRandomness():
         tmpdata_explicit = [myObjExplicit.s, myObjExplicit.q, myObjExplicit.x, myObjExplicit.simulate_control_a, myObjExplicit.simulate_control_b]
         tmpdata_implicit = [myObjImplicit.s, myObjImplicit.q, myObjImplicit.x, myObjImplicit.simulate_control_a, myObjImplicit.simulate_control_b, \
                             myObjImplicit.simulate_price_a, myObjImplicit.simulate_price_b]
-        data.append([tmpdata_explicit, tmpdata_implicit])
-
+        sim_data.append([tmpdata_explicit, tmpdata_implicit])
+    data.append(sim_data)
     
     dumpData(data)
