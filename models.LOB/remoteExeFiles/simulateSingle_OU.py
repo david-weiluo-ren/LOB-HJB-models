@@ -128,7 +128,7 @@ def simulateComparison_OU_sameRandomness():
     fileName += '_comparison'
     random_q_0_opt = False if random_q_0.upper()=="FALSE" else True
    
-    data = [fileName]
+    data = [fileName[:80]]
     
     myObjImplicit = Poisson_OU_implicit(**options_forImplicit)
     myObjExplicit = Poisson_explicit_OU_LOB(**options_forExplicit)
