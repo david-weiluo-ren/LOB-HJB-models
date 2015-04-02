@@ -29,10 +29,8 @@ class Poisson_OU_implicit(Abstract_OU_LOB):
         self.abs_threshold = 10**abs_threshold_power
         self.rlt_threshold = 10**rlt_threshold_power
         self.use_sparse = use_sparse
-        self._a_price = []
-        self._b_price = [] 
-        self.simulate_price_a = []
-        self.simulate_price_b = []
+        
+        
         self.simulate_price_a_test = []
         self.simulate_price_b_test = []
     '''

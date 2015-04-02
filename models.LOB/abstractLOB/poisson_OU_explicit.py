@@ -21,7 +21,7 @@ class Poisson_explicit_OU_LOB(Abstract_OU_LOB):
     def terminal_condition_real(self):
         return np.outer(self.implement_s_space, self.implement_q_space)
     
-    def feedback_control(self, v):
+    def feedback_control(self, v, price=False):
         v_s = np.true_divide(v[2:,:] - v[:-2, :], 2*self.delta_s)[:, 1:-1]
         
         v_q_backward = (v[:, :-2] - v[:, 1:-1])[1:-1, :]
@@ -32,7 +32,7 @@ class Poisson_explicit_OU_LOB(Abstract_OU_LOB):
         
         v_s_reshape = np.reshape(v_s, (-1,))
         optimal_a_reshape = np.ones(len(v_s_reshape)) * LARGE_NUM
-        optimal_b_reshape = np.ones(len(v_s_reshape)) * LARGE_NUM
+        optimal_b_reshape = np.ones(len(v_s_reshape)) * LARGE_NUM * (-1 if price else 1)
         v_q_backward_reshape = np.reshape(v_q_backward, (-1,))
         v_q_forward_reshape = np.reshape(v_q_forward, (-1,))
         s_space_casted_reshape = np.reshape(s_space_casted, (-1,))
@@ -43,11 +43,18 @@ class Poisson_explicit_OU_LOB(Abstract_OU_LOB):
         index_b = 1-self.gamma*self.beta*v_s_reshape>0
 
         try:    
-            optimal_a_reshape[index_a] = np.true_divide(1, self.gamma)*(np.log(1+np.true_divide(self.gamma, self.kappa)) - np.log(1+self.gamma*self.beta*v_s_reshape[index_a]))\
+            if not price:
+                optimal_a_reshape[index_a] = np.true_divide(1, self.gamma)*(np.log(1+np.true_divide(self.gamma, self.kappa)) - np.log(1+self.gamma*self.beta*v_s_reshape[index_a]))\
                     -(v_q_backward_reshape[index_a] + s_space_casted_reshape[index_a])
-            optimal_b_reshape[index_b] = np.true_divide(1, self.gamma)*(np.log(1+np.true_divide(self.gamma, self.kappa)) - np.log(1-self.gamma*self.beta*v_s_reshape[index_b ]))\
+                optimal_b_reshape[index_b] = np.true_divide(1, self.gamma)*(np.log(1+np.true_divide(self.gamma, self.kappa)) - np.log(1-self.gamma*self.beta*v_s_reshape[index_b ]))\
                     -(v_q_forward_reshape[index_b ] - s_space_casted_reshape[index_b ])
-            return [np.reshape(optimal_a_reshape,np.shape(v_s)), np.reshape(optimal_b_reshape,np.shape(v_s))]
+                return [np.reshape(optimal_a_reshape,np.shape(v_s)), np.reshape(optimal_b_reshape,np.shape(v_s))]
+            else:
+                optimal_a_reshape[index_a] = np.true_divide(1, self.gamma)*(np.log(1+np.true_divide(self.gamma, self.kappa)) - np.log(1+self.gamma*self.beta*v_s_reshape[index_a]))\
+                    -(v_q_backward_reshape[index_a])
+                optimal_b_reshape[index_b] = -1 * (np.true_divide(1, self.gamma)*(np.log(1+np.true_divide(self.gamma, self.kappa)) - np.log(1-self.gamma*self.beta*v_s_reshape[index_b ]))\
+                    -(v_q_forward_reshape[index_b ]))
+                return [np.reshape(optimal_a_reshape,np.shape(v_s)), np.reshape(optimal_b_reshape,np.shape(v_s))]
         except Exception as e:
             print e
             plot(v)
@@ -58,12 +65,18 @@ class Poisson_explicit_OU_LOB(Abstract_OU_LOB):
     
     def truncate_control_at_zero(self, arrays):
         return [self.truncate_at_zero(arr) for arr in arrays]
+    def truncate_at_reference_price(self, arrays):
+        price_a = arrays[0]
+        price_b = arrays[1]
+        s_space_casted = np.outer(self.implement_s_space[1:-1], np.ones(len(self.implement_q_space) - 2)) 
+
+        return [np.maximum(s_space_casted, price_a), np.minimum(s_space_casted, price_b)]
     
     def one_step_back(self, v_curr, step_index=None):
         v_new = np.ndarray((len(self.implement_s_space), len(self.implement_q_space)))
         
         optimal_a, optimal_b = self.truncate_control_at_zero (self.feedback_control(v_curr))
-        
+        price_a, price_b = self.truncate_at_reference_price(self.feedback_control(v_curr, price=True))
         v_ss = np.true_divide(v_curr[2:,:] + v_curr[:-2, :] - 2* v_curr[1:-1, :], self.delta_s**2)[:, 1:-1]
         v_s = np.true_divide(v_curr[2:,:] - v_curr[:-2, :], 2*self.delta_s)[:, 1:-1]
         s_space_casted = np.outer(self.implement_s_space[1:-1], np.ones(len(self.implement_q_space) - 2)) 
@@ -87,6 +100,9 @@ class Poisson_explicit_OU_LOB(Abstract_OU_LOB):
             v_new[:, -1] = v_new[:, -2]
             self._a_control.append(optimal_a)
             self._b_control.append(optimal_b)
+            self._a_price.append(price_a)
+            self._b_price.append(price_b)
+
             return v_new
         except Exception as e:
             print e

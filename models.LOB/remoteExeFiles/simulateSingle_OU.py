@@ -140,7 +140,8 @@ def simulateComparison_OU_sameRandomness():
         randomSource = myObjExplicit.generate_random_source()
         myObjExplicit.simulate_forward(useGivenRandom=True, randomSource=randomSource)
         myObjImplicit.simulate_forward(useGivenRandom=True, randomSource=randomSource)
-        tmpdata_explicit = [myObjExplicit.s, myObjExplicit.q, myObjExplicit.x, myObjExplicit.simulate_control_a, myObjExplicit.simulate_control_b]
+        tmpdata_explicit = [myObjExplicit.s, myObjExplicit.q, myObjExplicit.x, myObjExplicit.simulate_control_a, myObjExplicit.simulate_control_b,\
+                            myObjExplicit.simulate_price_a, myObjExplicit.simulate_price_b]
         tmpdata_implicit = [myObjImplicit.s, myObjImplicit.q, myObjImplicit.x, myObjImplicit.simulate_control_a, myObjImplicit.simulate_control_b, \
                             myObjImplicit.simulate_price_a, myObjImplicit.simulate_price_b]
         sim_data.append([tmpdata_explicit, tmpdata_implicit])

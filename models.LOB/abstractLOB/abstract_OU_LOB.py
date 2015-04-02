@@ -69,7 +69,10 @@ class Abstract_OU_LOB(AbstractLOB):
         self.v_init = self.terminal_condition_real()
         self.s_drift_impact = [0]
         self.s_drift_OU = [0]
-    
+        self._a_price = []
+        self._b_price = []
+        self.simulate_price_a = []
+        self.simulate_price_b = [] 
     def truncate_at_zero(self, arr):
         return np.maximum(arr, 0)    
     def q_to_index_for_simulate_control(self, q):
@@ -93,12 +96,17 @@ class Abstract_OU_LOB(AbstractLOB):
         curr_control_a = self._a_control[-1*(index+1)][self.s_to_index_for_simulate_control(curr_s) ,self.q_to_index_for_simulate_control(curr_q)]
         curr_control_b = self._b_control[-1*(index+1)][self.s_to_index_for_simulate_control(curr_s) ,self.q_to_index_for_simulate_control(curr_q)]
         return [curr_control_a, curr_control_b] 
+    def price_at_current_point(self, index, curr_q, curr_s):
         
+        curr_price_a = self._a_price[-1*(index+1)][self.s_to_index_for_simulate_control(curr_s) ,self.q_to_index_for_simulate_control(curr_q)]
+        curr_price_b = self._b_price[-1*(index+1)][self.s_to_index_for_simulate_control(curr_s) ,self.q_to_index_for_simulate_control(curr_q)]
+        return [curr_price_a, curr_price_b]    
     
     def simulate_one_step_forward_helper(self, index, random_a, random_b, random_s):
 
         curr_control_a, curr_control_b = self.control_at_current_point(index, self.q[-1], self.s[-1])
-       
+        curr_price_a, curr_price_b = self.price_at_current_point(index, self.q[-1], self.s[-1])
+
         a_intensity = self.delta_t * self.A * np.exp(-self.kappa* curr_control_a)
         b_intensity = self.delta_t * self.A * np.exp(-self.kappa* curr_control_b)
         a_prob_0 = np.exp(-a_intensity)
@@ -126,6 +134,8 @@ class Abstract_OU_LOB(AbstractLOB):
         self.s.append(self.s[-1] + delta_s)
         self.simulate_control_a.append(curr_control_a)
         self.simulate_control_b.append(curr_control_b) 
+        self.simulate_price_a.append(curr_price_a)
+        self.simulate_price_b.append(curr_price_b)         
         self.s_drift.append(self.s_drift[-1] + delta_s_drift_part) 
         self.s_drift_impact.append(self.s_drift_impact[-1] + delta_s_price_impact_part)
         self.s_drift_OU.append(self.s_drift_OU[-1] + delta_s_OU_part)      
