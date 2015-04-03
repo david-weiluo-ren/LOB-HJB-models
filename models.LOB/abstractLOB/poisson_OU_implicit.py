@@ -144,7 +144,8 @@ class Poisson_OU_implicit(Abstract_OU_LOB):
         a_curr_exp_neg, b_curr_exp_neg = curr_exp_neg_control
         totalLength = self.implement_I * self.implement_S
         eq_right = v_curr.copy()
-        eq_right[1:-1] += - 0.5 * self.sigma_s**2 * self.gamma * self.delta_t * ((v_iter_old[2:] - v_iter_old[:-2])/(2*self.delta_s))**2
+        eq_right[1:-1] += - 0.5 * self.sigma_s**2 * self.gamma * self.delta_t * ((v_iter_old[2:] - v_iter_old[:-2])/(2*self.delta_s))**2\
+            + self.A*self.delta_t/(self.kappa + self.gamma) * ((a_curr_exp_neg[1:-1]) ** self.kappa + (b_curr_exp_neg[1:-1]) ** self.kappa)
         eq_right[:self.implement_S] = 0
         eq_right[-self.implement_S:] = 0
         for i in xrange(1, self.implement_I-1):
