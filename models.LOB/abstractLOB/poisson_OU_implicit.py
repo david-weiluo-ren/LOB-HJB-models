@@ -125,7 +125,7 @@ class Poisson_OU_implicit(Abstract_OU_LOB):
             return [exp_neg_optimal_a, exp_neg_optimal_b]
         else :
             price_a = np.ones(len(v)) * LARGE_NUM
-            price_b = np.ones(len(v)) * LARGE_NUM
+            price_b = -np.ones(len(v)) * LARGE_NUM
             price_a[a_critical_value > 0] = 1.0/self.gamma * np.log(1 + self.gamma/self.kappa)\
              - 1.0/self.gamma * np.log(a_critical_value[a_critical_value>0] )\
              +  v_q_backward[a_critical_value>0]

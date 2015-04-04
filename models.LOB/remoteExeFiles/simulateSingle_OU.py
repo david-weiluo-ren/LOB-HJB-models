@@ -128,7 +128,7 @@ def simulateComparison_OU_sameRandomness():
     fileName += '_comparison'
     random_q_0_opt = False if random_q_0.upper()=="FALSE" else True
    
-    data = [fileName[:80], options_forImplicit]
+    data = [fileName[:200], options_forImplicit]
     
     myObjImplicit = Poisson_OU_implicit_truncateControlAtZero(**options_forImplicit)
     myObjExplicit = Poisson_explicit_OU_LOB(**options_forExplicit)
@@ -148,3 +148,23 @@ def simulateComparison_OU_sameRandomness():
     data.append(sim_data)
     
     dumpData(data)
+    
+def save_OU_obj():
+    options_forImplicit, options_forExplicit,  simulate_num, fileName, random_q_0 = prepareOptions_forSameRandomness()
+    fileName += '_obj'
+    data = [fileName[:200], options_forImplicit]
+    myObjImplicit_truncation = Poisson_OU_implicit_truncateControlAtZero(**options_forImplicit)
+    myObjImplicit_no_truncation = Poisson_OU_implicit(**options_forImplicit)
+    myObjImplicit_no_truncation.run()
+    myObjImplicit_truncation.run()
+    data.append(myObjImplicit_no_truncation)
+    data.append(myObjImplicit_truncation)
+    dumpData(data)
+
+    
+    
+    
+    
+    
+    
+    

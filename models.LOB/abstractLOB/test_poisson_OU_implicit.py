@@ -9,6 +9,23 @@ import numpy as np
 from pylab import plot, show
 class Test(unittest.TestCase):
 
+
+    def test_largeBeta(self):
+        
+        myObj_tmp = Poisson_OU_implicit_truncateControlAtZero(A=20, s_0=0, kappa=1.5, sigma_s=3.0, num_time_step=100,\
+                                  half_S=3, delta_t=0.001, N=8.0, half_I_S=50,\
+                                  beta=1, q_0=0.0, alpha=10.0,gamma=1.0, s_long_term_mean=0.0,\
+                                   new_weight=0.1, \
+                                  abs_threshold_power = -8, rlt_threshold_power = -7)
+        myObj_tmp.run()
+        for _ in xrange(3):
+            myObj_tmp.simulate_forward(q_0=4);
+            plot(myObj_tmp.simulate_price_a, 'r')
+            plot(myObj_tmp.simulate_price_b, 'b')
+            plot(myObj_tmp.s[:-1], 'g')
+            show()
+            plot(myObj_tmp.q[:-1])
+            show()
     @unittest.SkipTest
     def test_implicit2(self):
         myObj= Poisson_OU_implicit(A=20, s_0=5, kappa=1.5, sigma_s=3.0, num_time_step=1000,\
@@ -46,7 +63,7 @@ class Test(unittest.TestCase):
         plot(myObj.q[:-1])
         show()    
         
-        
+    @unittest.SkipTest  
     def test_implicit_price(self):
         myObj= Poisson_OU_implicit(A=20, s_0=0, kappa=1.5, sigma_s=3.0, num_time_step=200,\
                                   half_S=3, delta_t=0.001, N=10.0, half_I_S=50,\
