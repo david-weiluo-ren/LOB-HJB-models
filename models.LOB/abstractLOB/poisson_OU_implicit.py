@@ -80,7 +80,7 @@ class Poisson_OU_implicit(Abstract_OU_LOB):
             iter_count += 1
             if iter_count > self.iter_max:
                 print step_index
-                for arr in self.a_control:
+                for arr in self._a_control:
                     plot(arr)
                 show()
                 raise Exception('iteration cannot converge!')  

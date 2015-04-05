@@ -50,6 +50,9 @@ def prepareOptions_forSameRandomness():
                         help="the power of absolute threshold for determining when to stop the iteration")
     parser.add_argument('-rlt_threshold_power', type=float, nargs='?',\
                         help="the power of relative threshold for determining when to stop the iteration")
+    parser.add_argument('-iter_max', type=float, nargs='?',\
+                        help="max number of iteration")
+    
     
     options = myReader.parserToArgsDict(parser)
     options.pop("type")
@@ -72,6 +75,8 @@ def prepareOptionsHelper3(options):
         options.pop('abs_threshold_power')
     if 'rlt_threshold_power' in options:
         options.pop('rlt_threshold_power')
+    if 'iter_max' in options:
+        options.pop('iter_max')
     options_forExplicit = options.copy()
     return [options_forImplicit, options_forExplicit,  simulate_num, fileName, random_q_0]
 
