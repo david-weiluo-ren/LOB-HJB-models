@@ -71,6 +71,8 @@ def prepareOptionsHelper3(options):
     
     random_q_0  =  options['random_q_0'].upper()
     truncation_option = options['truncation_option']
+    if 'truncation_option' in options:
+        options.pop('truncation_option')
     options.pop("random_q_0")
     options_forImplicit = options.copy()
     if "new_weight" in options:
@@ -81,8 +83,7 @@ def prepareOptionsHelper3(options):
         options.pop('rlt_threshold_power')
     if 'iter_max' in options:
         options.pop('iter_max')
-    if 'truncation_option' in options:
-        options.pop('truncation_option')
+    
     options_forExplicit = options.copy()
     return [options_forImplicit, options_forExplicit,  simulate_num, fileName, random_q_0, truncation_option]
 
