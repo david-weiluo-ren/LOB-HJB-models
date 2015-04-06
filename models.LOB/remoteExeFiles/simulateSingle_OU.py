@@ -154,7 +154,7 @@ def simulateComparison_OU_sameRandomness():
     
     dumpData(data)
     
-def save_OU_obj():
+def save_OU_obj_helper():
     options_forImplicit, options_forExplicit,  simulate_num, fileName, random_q_0 = prepareOptions_forSameRandomness()
     fileName += '_obj'
     data = [fileName[:200], options_forImplicit]
@@ -164,12 +164,20 @@ def save_OU_obj():
     myObjImplicit_truncation.run()
     data.append(myObjImplicit_no_truncation)
     data.append(myObjImplicit_truncation)
-    dumpData(data)
+    return data, simulate_num
 
     
+def save_OU_obj():
+    data, simulate_num = save_OU_obj_helper()
+    dumpData(data)
     
-    
-    
-    
+def simulate_OU_checkStd():
+    data, simulate_num = save_OU_obj_helper()
+    myObjImplicit_no_truncation = data[2]
+    myObjImplicit_truncation = data[3]
+    dump_data = [data[0], data[1]]
+    dump_data.append(summary_mean_var_helper(myObjImplicit_no_truncation, simulate_num, data[1], data[0], False, False))
+    dump_data.append(summary_mean_var_helper(myObjImplicit_truncation, simulate_num, data[1], data[0], False, False))
+    dumpData(dump_data)
     
     

@@ -9,7 +9,14 @@ import numpy as np
 from pylab import plot, show
 class Test(unittest.TestCase):
 
-
+    def test_wierdUnconvergeCase(self):
+        myObj_tmp = Poisson_OU_implicit_truncateControlAtZero(A=20, s_0=0, kappa=1.5, sigma_s=1.5, num_time_step=1000,\
+                                  half_S=3, delta_t=0.001, N=8.0, half_I_S=50,\
+                                  beta=0.05, q_0=0.0, alpha=2.5,gamma=1.0, s_long_term_mean=0.0,\
+                                   new_weight=0.1, \
+                                  abs_threshold_power = -6, rlt_threshold_power = -5)
+        myObj_tmp.run()
+    @unittest.SkipTest
     def test_largeBeta(self):
         
         myObj_tmp = Poisson_OU_implicit_truncateControlAtZero(A=20, s_0=0, kappa=1.5, sigma_s=3.0, num_time_step=100,\

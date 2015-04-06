@@ -105,7 +105,6 @@ class Poisson_OU_implicit(Abstract_OU_LOB):
         v_q_forward[ : -self.implement_S] = v[self.implement_S : ] -  v[ : -self.implement_S] 
         v_q_backward[self.implement_S : ] = v[self.implement_S : ] -   v[ : -self.implement_S]
        
-        implement_q_space_casted = np.repeat(self.implement_q_space, self.implement_S)
         implement_s_space_casted = np.tile(self.implement_s_space, self.implement_I)
         LARGE_NUM = 100
         a_critical_value = 1 + self.beta * self.gamma * v_s_forward
