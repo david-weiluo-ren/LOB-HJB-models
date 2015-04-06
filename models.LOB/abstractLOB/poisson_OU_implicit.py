@@ -33,16 +33,28 @@ class Poisson_OU_implicit(Abstract_OU_LOB):
         
         self.simulate_price_a_test = []
         self.simulate_price_b_test = []
+        self.valid_index = self.construct_valid_index()
+    def construct_valid_index(self):
+        result = np.array([True] * (self.implement_I * self.implement_S))
+        result[:self.implement_S] = False
+        result[-self.implement_S:] = False
+        for i in xrange(1, self.implement_I-1):
+            result[i*self.implement_S] = False
+            result[(i+1)*self.implement_S - 1] = False
+        return result
+
     '''
     Borrowed from AbstractImplicitLOB starts here
     
     I do think we should use a inner helper function to replace those code.
     '''
     def close_enough(self, v_new, v_curr):
-        return np.allclose(v_curr, v_new, self.rlt_threshold, self.abs_threshold)\
-            and np.allclose(v_new, v_curr, self.rlt_threshold, self.abs_threshold)
+        #return np.allclose(v_curr, v_new, self.rlt_threshold, self.abs_threshold)\
+            #and np.allclose(v_new, v_curr, self.rlt_threshold, self.abs_threshold)
     
-
+        return np.allclose(v_curr[self.valid_index], v_new[self.valid_index], self.rlt_threshold, self.abs_threshold)\
+            and np.allclose(v_new[self.valid_index], v_curr[self.valid_index], self.rlt_threshold, self.abs_threshold)
+    
 
     def one_iteration(self, v_curr, v_iter_old, curr_control, step_index):
         eq_right, co_matrix = self.linear_system(v_curr, v_iter_old, curr_control, step_index)
@@ -50,7 +62,11 @@ class Poisson_OU_implicit(Abstract_OU_LOB):
             return spsolve(co_matrix, eq_right)
         else:
             return solve(co_matrix.todense(), eq_right)
-   
+    
+        
+        
+        
+        
     def one_step_back(self, v_curr, step_index):
         
         return_control= self.exp_neg_feedback_control(v_curr)
@@ -322,7 +338,7 @@ class Poisson_OU_implicit_truncateControlAtZero(Poisson_OU_implicit):
             price_a = np.maximum(price_a, implement_s_space_casted)
             price_b = np.minimum(price_b, implement_s_space_casted)
             return [price_a, price_b]
-        else :
+        else:
             exp_neg_optimal = super(Poisson_OU_implicit_truncateControlAtZero, self).exp_neg_feedback_control(v, price)
             return np.minimum(1, exp_neg_optimal)
 
