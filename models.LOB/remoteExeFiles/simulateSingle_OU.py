@@ -53,6 +53,9 @@ def prepareOptions_forSameRandomness():
     parser.add_argument('-iter_max', type=float, nargs='?',\
                         help="max number of iteration")
     
+    _truncation_option = 0 #0: both, 1: truncation only, 2: no truncation only.
+    parser.add_argument('-truncation_option', type = int, default = _truncation_option,\
+                        nargs = '?', help="number of trajectories to simulate")
     
     options = myReader.parserToArgsDict(parser)
     options.pop("type")
@@ -67,6 +70,7 @@ def prepareOptionsHelper3(options):
     options.pop('simulate_num')
     
     random_q_0  =  options['random_q_0'].upper()
+    truncation_option = options['truncation_option']
     options.pop("random_q_0")
     options_forImplicit = options.copy()
     if "new_weight" in options:
@@ -77,8 +81,10 @@ def prepareOptionsHelper3(options):
         options.pop('rlt_threshold_power')
     if 'iter_max' in options:
         options.pop('iter_max')
+    if 'truncation_option' in options:
+        options.pop('truncation_option')
     options_forExplicit = options.copy()
-    return [options_forImplicit, options_forExplicit,  simulate_num, fileName, random_q_0]
+    return [options_forImplicit, options_forExplicit,  simulate_num, fileName, random_q_0, truncation_option]
 
 def summary_mean_var(options,simulate_num,fileName, randomOpt = False):
     myObj = Poisson_explicit_OU_LOB(**options)
@@ -155,15 +161,19 @@ def simulateComparison_OU_sameRandomness():
     dumpData(data)
     
 def save_OU_obj_helper():
-    options_forImplicit, options_forExplicit,  simulate_num, fileName, random_q_0 = prepareOptions_forSameRandomness()
+    options_forImplicit, options_forExplicit,  simulate_num, fileName, random_q_0, truncation_option \
+    = prepareOptions_forSameRandomness()
     fileName += '_obj'
     data = [fileName[:200], options_forImplicit]
-    myObjImplicit_truncation = Poisson_OU_implicit_truncateControlAtZero(**options_forImplicit)
-    myObjImplicit_no_truncation = Poisson_OU_implicit(**options_forImplicit)
-    myObjImplicit_no_truncation.run()
-    myObjImplicit_truncation.run()
-    data.append(myObjImplicit_no_truncation)
-    data.append(myObjImplicit_truncation)
+    if truncation_option == 0 or truncation_option == 1:
+        myObjImplicit_truncation = Poisson_OU_implicit_truncateControlAtZero(**options_forImplicit)
+        myObjImplicit_truncation.run()
+        data.append(myObjImplicit_truncation)
+    if truncation_option == 0 or truncation_option == 2:
+
+        myObjImplicit_no_truncation = Poisson_OU_implicit(**options_forImplicit)
+        myObjImplicit_no_truncation.run()
+        data.append(myObjImplicit_no_truncation)
     return data, simulate_num
 
     
