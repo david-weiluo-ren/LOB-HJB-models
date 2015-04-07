@@ -194,7 +194,7 @@ def simulate_OU_checkStd():
     if truncation_option == 1:
         myObjImplicit_truncation = data[2]
         dump_data.append(summary_mean_var_helper(myObjImplicit_truncation, simulate_num, data[1], data[0], False, False))
-    if truncation_option == 0:
+    if truncation_option == 2:
         myObjImplicit_no_truncation = data[2]
         dump_data.append(summary_mean_var_helper(myObjImplicit_no_truncation, simulate_num, data[1], data[0], False, False))
     
