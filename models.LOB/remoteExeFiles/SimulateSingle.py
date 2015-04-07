@@ -103,7 +103,7 @@ def summary_mean_var_helper(myObj, simulate_num, options, fileName, randomOpt, d
             except:
                 pass
             
-            tmp_data.append( np.asarray(myObj.s).std())
+            #tmp_data.append( np.asarray(myObj.s).std())
             
 
             
