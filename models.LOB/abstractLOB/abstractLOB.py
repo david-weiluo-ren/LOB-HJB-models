@@ -192,14 +192,17 @@ class AbstractLOB(object):
         q_0 = self.q_0 if q_0 is None else q_0
         x_0 = self.x_0 if x_0 is None else x_0
         s_0 = self.s_0 if s_0 is None else s_0
-        self.simulate_control_a = []
-        self.simulate_control_b = []
-        self.q = [q_0]
-        self.q_a = [0]
-        self.q_b = [0]
-        self.x = [x_0]
-        self.s = [s_0]
-        self.s_drift=[0]
+        
+
+     
+        self.simulate_control_a[:] = []
+        self.simulate_control_b[:] = []
+        self.q[:] = [q_0]
+        self.q_a[:] = [0]
+        self.q_b[:] = [0]
+        self.x[:] = [x_0]
+        self.s[:] = [s_0]
+        self.s_drift[:]=[0]
     
    
     def simulate_one_step_forward(self, index):

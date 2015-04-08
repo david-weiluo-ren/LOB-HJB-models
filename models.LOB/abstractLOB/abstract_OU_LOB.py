@@ -151,5 +151,6 @@ class Abstract_OU_LOB(AbstractLOB):
         return [np.random.random(self.num_time_step), np.random.random(self.num_time_step), np.random.normal(0, 1, self.num_time_step)]
     def init_forward_data(self, q_0 = None, x_0 = None, s_0 = None ):
         super(Abstract_OU_LOB, self).init_forward_data(q_0, x_0, s_0)
-        self.simulate_price_a = []
-        self.simulate_price_b = []
+        self.simulate_price_a[:] = []
+        self.simulate_price_b[:] = []
+        
