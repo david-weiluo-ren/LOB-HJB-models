@@ -138,7 +138,8 @@ class Abstract_OU_LOB(AbstractLOB):
         self.simulate_price_b.append(curr_price_b)         
         self.s_drift.append(self.s_drift[-1] + delta_s_drift_part) 
         self.s_drift_impact.append(self.s_drift_impact[-1] + delta_s_price_impact_part)
-        self.s_drift_OU.append(self.s_drift_OU[-1] + delta_s_OU_part)      
+        self.s_drift_OU.append(self.s_drift_OU[-1] +  delta_s_price_impact_part) 
+        #self.s_drift_OU.append(self.s_drift_OU[-1] + delta_s_OU_part)      
         #self.a_intensity_simulate.append(a_intensity)
         #self.b_intensity_simulate.append(b_intensity)    
         
