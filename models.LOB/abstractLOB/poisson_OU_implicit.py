@@ -303,7 +303,9 @@ class Poisson_OU_implicit(Abstract_OU_LOB):
         delta_q = delta_N_b - delta_N_a
         delta_s_price_impact_part = self.delta_t * self.beta*(self.A* curr_control_a ** self.kappa \
                          - self.A* curr_control_b ** self.kappa )
+
         delta_s_OU_part = self.alpha*(self.s_long_term_mean-self.s[-1])*self.delta_t
+        
         delta_s_drift_part = delta_s_price_impact_part + delta_s_OU_part
         delta_s = self.sigma_s*np.sqrt(self.delta_t) * random_s +delta_s_drift_part 
         self.x.append(self.x[-1] + delta_x)
@@ -317,9 +319,10 @@ class Poisson_OU_implicit(Abstract_OU_LOB):
         self.simulate_price_b_test.append(self.s[-1] - b_spread)
 
 
-
+        #self.s_drift.append(self.s_drift[-1] +  delta_s_price_impact_part) 
         self.s_drift.append(self.s_drift[-1] + delta_s_drift_part) 
         self.s_drift_impact.append(self.s_drift_impact[-1] + delta_s_price_impact_part)
+        
         self.s_drift_OU.append(self.s_drift_OU[-1] + delta_s_OU_part)    
 
     def init_forward_data(self, q_0 = None, x_0 = None, s_0 = None ):

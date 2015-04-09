@@ -67,8 +67,8 @@ def summary_mean_var(options,simulate_num,fileName, randomOpt = False):
     return summary_mean_var_helper(myObj, simulate_num, options, fileName, randomOpt)
 def summary_mean_var_helper(myObj, simulate_num, options, fileName, randomOpt, dataCheckingOption=False):
 
-    mean_data = [0,0,0,0,0]  #[simulate_control_a_mean, simulate_control_b_mean, simulate_s_mean, simulate_q_mean]
-    squared_data = [0, 0, 0, 0,0] #[simulate_control_a_squared, simulate_control_b_squared, simulate_s_squared, simulate_q_squared]
+    mean_data = [0,0,0,0,0,0,0]  #[simulate_control_a_mean, simulate_control_b_mean, simulate_s_mean, simulate_q_mean]
+    squared_data = [0, 0, 0, 0,0,0,0] #[simulate_control_a_squared, simulate_control_b_squared, simulate_s_squared, simulate_q_squared]
     
     successful_simulate_num = 0
     q_0_origin = myObj.q_0
@@ -93,13 +93,22 @@ def summary_mean_var_helper(myObj, simulate_num, options, fileName, randomOpt, d
                 mean_data[4] += np.asarray(myObj.s_drift)
             except:
                 pass
-            
+            try: 
+                mean_data[5] += np.asarray(myObj.simulate_price_a)
+                mean_data[6] += np.asarray(myObj.simulate_price_b)
+            except:
+                pass
             squared_data[0] += np.asarray(myObj.simulate_control_a)**2
             squared_data[1] += np.asarray(myObj.simulate_control_b)**2
             squared_data[2] += np.asarray(myObj.s)**2
             squared_data[3] += np.asarray(myObj.q)**2
             try:
                 squared_data[4] += np.asarray(myObj.s_drift)**2
+            except:
+                pass
+            try: 
+                squared_data[5] += np.asarray(myObj.simulate_price_a)**2
+                squared_data[6] += np.asarray(myObj.simulate_price_b)**2
             except:
                 pass
             
@@ -111,8 +120,8 @@ def summary_mean_var_helper(myObj, simulate_num, options, fileName, randomOpt, d
     var_data = []
     for i in xrange(len(squared_data)):
         var_data.append(np.true_divide(squared_data[i],successful_simulate_num) - mean_data[i]**2)        
-   
-   
+    print mean_data[4]
+    print squared_data[4]
     data_for_checking = [[], [], []]
     if dataCheckingOption:
         for i in np.arange(0, len(myObj.result),int(len(myObj.result)/20)):
