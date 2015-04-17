@@ -159,13 +159,19 @@ class Poisson_OU_explicit_marketOrder(Abstract_OU_LOB):
         
         curr_xi = self._xi[-1*(index+1)][self.s_to_index_for_simulate_control(curr_s) ,self.q_to_index_for_simulate_control(curr_q)]        
         return curr_xi 
+    def exp_neg_to_spread(self, exp_neg):
+        return -np.log(exp_neg) if exp_neg > 0 else 0
     def simulate_one_step_forward_helper(self, index, random_a, random_b, random_s):
 
         curr_control_a, curr_control_b = self.control_at_current_point(index, self.q[-1], self.s[-1])
         curr_price_a, curr_price_b = self.price_at_current_point(index, self.q[-1], self.s[-1])
+        curr_spread_a = self.exp_neg_to_spread(curr_control_a)
+        curr_spread_b = self.exp_neg_to_spread(curr_control_b)
+
         curr_xi = self.xi_at_current_point(index, self.q[-1], self.s[-1])
         a_intensity = self.delta_t * self.A * curr_control_a**self.kappa if curr_xi >= 0 else 0
         b_intensity = self.delta_t * self.A * curr_control_b**self.kappa if curr_xi <= 0 else 0
+        
         a_prob_0 = np.exp(-a_intensity)
         b_prob_0 = np.exp(-b_intensity)
         #Here we only want our intensity small enough that with extremely low probability that Poisson event could happen more than twice in a small time interval.
@@ -179,7 +185,8 @@ class Poisson_OU_explicit_marketOrder(Abstract_OU_LOB):
         if random_b > b_prob_0 + b_prob_1:
             print "too large B_intensity!", index
         
-        delta_x = (self.s[-1] + curr_control_a) * delta_N_a - (self.s[-1] - curr_control_b) * delta_N_b - curr_xi * (self.s[-1] + self.l * curr_xi)
+        #delta_x = (self.s[-1] + curr_spread_a) * delta_N_a - (self.s[-1] - curr_spread_b) * delta_N_b - curr_xi * (self.s[-1] + self.l * curr_xi)
+        delta_x = curr_price_a * delta_N_a - curr_price_b * delta_N_b - curr_xi * (self.s[-1] + self.l * curr_xi) *self.delta_t
         delta_q = delta_N_b - delta_N_a + curr_xi * self.delta_t
         delta_s_price_impact_part = 0
         #delta_s_price_impact_part = self.delta_t * self.beta*(self.A* np.exp(-self.kappa * curr_control_a) \
@@ -187,16 +194,17 @@ class Poisson_OU_explicit_marketOrder(Abstract_OU_LOB):
         delta_s_OU_part = self.alpha*(self.s_long_term_mean-self.s[-1])*self.delta_t
         delta_s_drift_part = delta_s_price_impact_part + delta_s_OU_part
         delta_s = self.sigma_s*np.sqrt(self.delta_t) * random_s + delta_s_drift_part 
+        curr_s = self.s[-1]
         self.x.append(self.x[-1] + delta_x)
         self.q.append(self.q[-1] + delta_q)
-        self.s.append(self.s[-1] + delta_s)
+        self.s.append(curr_s + delta_s)
         self.simulate_control_a.append(curr_control_a)
         self.simulate_control_b.append(curr_control_b) 
         self.simulate_price_a_withLargeNum.append(curr_price_a)
         self.simulate_price_b_withLargeNum.append(curr_price_b)
         
-        self.simulate_price_a.append(curr_price_a if curr_price_a != self.LARGE_NUM else self.s[-1])
-        self.simulate_price_b.append(curr_price_b if curr_price_b != -self.LARGE_NUM else self.s[-1])
+        self.simulate_price_a.append(curr_price_a if curr_price_a != self.LARGE_NUM else curr_s)
+        self.simulate_price_b.append(curr_price_b if curr_price_b != -self.LARGE_NUM else curr_s)
 
                  
         self.s_drift.append(self.s_drift[-1] + delta_s_drift_part) 
