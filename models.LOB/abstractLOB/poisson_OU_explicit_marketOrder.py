@@ -18,14 +18,23 @@ class Poisson_OU_explicit_marketOrder(Abstract_OU_LOB):
     def half_I(self):
         return self._half_I
 
-    def __init__(self, l =0.01, *args, **kwargs):
+    def __init__(self, l =0.01, LARGE_NUM=100, *args, **kwargs):
         super(Poisson_OU_explicit_marketOrder, self).__init__(*args, **kwargs)
         self.steps_for_one_share = self.half_I/self.N
         self.l = l
         self._xi = []
         self.simulate_xi = []
         self.simulate_accumulate_xi = [0]
-        
+        self.simulate_price_a_withLargeNum = []
+        self.simulate_price_b_withLargeNum = []
+
+        self.LARGE_NUM = LARGE_NUM
+    def init_forward_data(self, q_0 = None, x_0 = None, s_0 = None ):
+        super(Poisson_OU_explicit_marketOrder, self).init_forward_data(q_0, x_0, s_0)
+        self.simulate_xi[:] = []
+        self.simulate_accumulate_xi[:] = [0]
+        self.simulate_price_a_withLargeNum[:] = []
+        self.simulate_price_b_withLargeNum[:] = []
     def terminal_condition_real(self):
         return np.outer(self.implement_s_space, self.implement_q_space)
   
@@ -34,7 +43,7 @@ class Poisson_OU_explicit_marketOrder(Abstract_OU_LOB):
         #If not price, return exp(-\delta^a*)*I_{\xi>=0} and exp(-delta^b*)*I_{xi<=0}
         
     
-        LARGE_NUM = 100
+        
         #v_q_center = np.true_divide((v[1:-1, 2*self.steps_for_one_share:] - v[1:-1, :-2*self.steps_for_one_share]), 2 * self.delta_q)
         v_q_center = np.true_divide((v[1:-1, self.steps_for_one_share+1:-(self.steps_for_one_share-1)] - v[1:-1, (self.steps_for_one_share-1):-(self.steps_for_one_share+1)]), 2 * self.delta_q)
         v_q_center_reshape = np.reshape(v_q_center, (-1,))
@@ -74,19 +83,7 @@ class Poisson_OU_explicit_marketOrder(Abstract_OU_LOB):
         F_xi_optimal[marketOrder_indice] = self.gamma * np.true_divide((v_q_center_reshape[marketOrder_indice] - s_space_casted_reshape[marketOrder_indice]) ** 2, 4 * self.l)
         F_a_optimal[~askLimitOrder_indice] = 0
         F_b_optimal[~bidLimitOrder_indice] = 0
-        '''
-        print "v_q_center_reshape < s_space_casted_reshape", len(np.where(v_q_center_reshape < s_space_casted_reshape)[0])
-        print "bidMarketAskLimit_indice ", len(np.where(bidMarketAskLimit_indice == True)[0])
-        print " bidLimitAskMarket_indice", len(np.where(bidLimitAskMarket_indice == True)[0])
-        print "OK"
-        
-        print "v_q_center_reshape < s_space_casted_reshape", len(np.where(v_q_center_reshape > s_space_casted_reshape)[0])
-        print "bidLimitAskLimit_checkAskLimit_indice ", len(np.where(bidLimitAskLimit_checkAskLimit_indice == True)[0])
-        print " bidLimitAskLimit_checkBidLimit_indice", len(np.where(bidLimitAskLimit_checkBidLimit_indice == True)[0])
-        print "OK"
-        print "v_q_center_reshape == s_space_casted_reshape", len(np.where(v_q_center_reshape == s_space_casted_reshape)[0])
-        print len(v_q_backward_one_share_reshape)
-        '''
+
         try:    
             optimal_a_reshape = np.zeros(len(s_space_casted_reshape))
             optimal_b_reshape = np.zeros(len(s_space_casted_reshape))
@@ -99,12 +96,13 @@ class Poisson_OU_explicit_marketOrder(Abstract_OU_LOB):
                          np.reshape(optimal_xi, np.shape(v_q_center)), np.reshape(F_xi_optimal, np.shape(v_q_center)),\
                           np.reshape(F_a_optimal, np.shape(v_q_center)), np.reshape(F_b_optimal, np.shape(v_q_center))]
             else:
-                optimal_a_reshape = np.ones(len(s_space_casted_reshape)) * LARGE_NUM
-                optimal_b_reshape = np.ones(len(s_space_casted_reshape)) * LARGE_NUM * (-1 if price else 1)
+                optimal_a_reshape = np.ones(len(s_space_casted_reshape)) * self.LARGE_NUM
+                optimal_b_reshape = -np.ones(len(s_space_casted_reshape)) * self.LARGE_NUM 
                 optimal_a_reshape[askLimitOrder_indice] = np.true_divide(1, self.gamma)*(np.log(1+np.true_divide(self.gamma, self.kappa)))\
                     -(v_q_backward_one_share_reshape[askLimitOrder_indice])
                 optimal_b_reshape[bidLimitOrder_indice] = -1 * (np.true_divide(1, self.gamma)*(np.log(1+np.true_divide(self.gamma, self.kappa)))\
                     -(v_q_forward_one_share_reshape[bidLimitOrder_indice]))
+                
                 return [np.reshape(optimal_a_reshape,np.shape(v_q_center)), np.reshape(optimal_b_reshape,np.shape(v_q_center))]
         except Exception as e:
             print e
@@ -194,8 +192,13 @@ class Poisson_OU_explicit_marketOrder(Abstract_OU_LOB):
         self.s.append(self.s[-1] + delta_s)
         self.simulate_control_a.append(curr_control_a)
         self.simulate_control_b.append(curr_control_b) 
-        self.simulate_price_a.append(curr_price_a)
-        self.simulate_price_b.append(curr_price_b)         
+        self.simulate_price_a_withLargeNum.append(curr_price_a)
+        self.simulate_price_b_withLargeNum.append(curr_price_b)
+        
+        self.simulate_price_a.append(curr_price_a if curr_price_a != self.LARGE_NUM else self.s[-1])
+        self.simulate_price_b.append(curr_price_b if curr_price_b != -self.LARGE_NUM else self.s[-1])
+
+                 
         self.s_drift.append(self.s_drift[-1] + delta_s_drift_part) 
         self.s_drift_impact.append(self.s_drift_impact[-1] + delta_s_price_impact_part)
         #self.s_drift_OU.append(self.s_drift_OU[-1] +  delta_s_price_impact_part) 

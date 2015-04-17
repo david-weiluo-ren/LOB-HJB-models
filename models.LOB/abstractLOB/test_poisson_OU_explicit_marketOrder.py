@@ -29,8 +29,12 @@ class Test(unittest.TestCase):
         plot(myObj.simulate_control_a)
         plot(myObj.simulate_control_b)
         show()
-        plot(myObj.s)
+        plot(myObj.simulate_price_a, 'r')
+        plot(myObj.simulate_price_b, 'b')
+        plot(myObj.s, 'g')
         show()
+        
+        
 if __name__ == "__main__":
     #import sys;sys.argv = ['', 'Test.testName']
     unittest.main()
