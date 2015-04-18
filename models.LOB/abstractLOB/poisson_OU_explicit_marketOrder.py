@@ -113,7 +113,7 @@ class Poisson_OU_explicit_marketOrder(Abstract_OU_LOB):
         
             
     def one_step_back(self, v_curr, step_index=None):
-        #print step_index
+        print step_index
         v_new = np.ndarray((len(self.implement_s_space), len(self.implement_q_space)))
         
         exp_neg_optimal_a, exp_neg_optimal_b, optimal_xi, F_xi_optimal, F_a_optimal, F_b_optimal = self.feedback_control(v_curr)
@@ -132,8 +132,10 @@ class Poisson_OU_explicit_marketOrder(Abstract_OU_LOB):
         
         try:
            
-            v_new[1:-1, self.steps_for_one_share:-self.steps_for_one_share] = v_curr[1:-1, self.steps_for_one_share:-self.steps_for_one_share] +self.delta_t*((v_ss - self.gamma * v_s*v_s)*self.sigma_s**2*0.5\
-                                + v_s * self.alpha*(self.s_long_term_mean-s_space_casted))
+            v_new[1:-1, self.steps_for_one_share:-self.steps_for_one_share] = v_curr[1:-1, self.steps_for_one_share:-self.steps_for_one_share]\
+                                 +self.delta_t*((v_ss - self.gamma * v_s*v_s)*self.sigma_s**2*0.5\
+                                + v_s * self.alpha*(self.s_long_term_mean-s_space_casted)  
+                                + np.true_divide(F_xi_optimal + F_a_optimal + F_b_optimal, self.gamma) )
                                
         
             v_new[0,self.steps_for_one_share:-self.steps_for_one_share] = v_new[1, self.steps_for_one_share:-self.steps_for_one_share]
