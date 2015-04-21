@@ -113,7 +113,7 @@ class Poisson_OU_explicit_marketOrder(Abstract_OU_LOB):
         
             
     def one_step_back(self, v_curr, step_index=None):
-        print step_index
+        #print step_index
         v_new = np.ndarray((len(self.implement_s_space), len(self.implement_q_space)))
         
         exp_neg_optimal_a, exp_neg_optimal_b, optimal_xi, F_xi_optimal, F_a_optimal, F_b_optimal = self.feedback_control(v_curr)
@@ -140,9 +140,23 @@ class Poisson_OU_explicit_marketOrder(Abstract_OU_LOB):
         
             v_new[0,self.steps_for_one_share:-self.steps_for_one_share] = v_new[1, self.steps_for_one_share:-self.steps_for_one_share]
             v_new[-1, self.steps_for_one_share:-self.steps_for_one_share] = v_new[-2, self.steps_for_one_share:-self.steps_for_one_share]
-            v_new[:, :self.steps_for_one_share] = np.outer(v_new[:, self.steps_for_one_share], np.ones(self.steps_for_one_share))
-            v_new[:, -self.steps_for_one_share:] = np.outer(v_new[:, -self.steps_for_one_share - 1], np.ones(self.steps_for_one_share))
+            #v_new[:, :self.steps_for_one_share] = np.outer(v_new[:, self.steps_for_one_share], np.ones(self.steps_for_one_share))
+            #v_new[:, -self.steps_for_one_share:] = np.outer(v_new[:, -self.steps_for_one_share - 1], np.ones(self.steps_for_one_share))
+           
+            q_slop_steps = 3 * self.steps_for_one_share
+            #q_slop = np.true_divide(v_new[:, self.steps_for_one_share + q_slop_steps] - v_new[:, self.steps_for_one_share], q_slop_steps)
+            #v_new[:, :self.steps_for_one_share] = np.outer(v_new[:, self.steps_for_one_share], np.ones(self.steps_for_one_share)) + np.outer(q_slop, np.arange(-self.steps_for_one_share, 0, 1 ))
+            #v_new[:, -self.steps_for_one_share:] = np.outer(v_new[:, -self.steps_for_one_share - 1], np.ones(self.steps_for_one_share)) + np.outer(q_slop, np.arange(1, self.steps_for_one_share+1, 1 ))
             
+            q_slop_head = np.true_divide(v_new[:, self.steps_for_one_share + q_slop_steps] - v_new[:, self.steps_for_one_share], q_slop_steps)
+            q_slop_tail = np.true_divide(v_new[:, -self.steps_for_one_share-1 ] - v_new[:, -self.steps_for_one_share - 1 - q_slop_steps], q_slop_steps)
+            v_new[:, :self.steps_for_one_share] = np.outer(v_new[:, self.steps_for_one_share], np.ones(self.steps_for_one_share)) + np.outer(q_slop_head, np.arange(-self.steps_for_one_share, 0, 1 ))
+            v_new[:, -self.steps_for_one_share:] = np.outer(v_new[:, -self.steps_for_one_share - 1], np.ones(self.steps_for_one_share)) + np.outer(q_slop_tail, np.arange(1, self.steps_for_one_share+1, 1 ))
+            
+            
+            
+            
+
             
             self._a_control.append(exp_neg_optimal_a)
             self._b_control.append(exp_neg_optimal_b)
