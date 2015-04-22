@@ -80,12 +80,12 @@ class Abstract_OU_LOB(AbstractLOB):
         if q > self.N or q < -self.N:
                 print q, self.N
                 self.failed_simulation += 1
-                plot(self.q)
-                show()
-                plot(self.s)
-                plot(self.simulate_price_a)
-                plot(self.simulate_price_b)
-                show()
+                #plot(self.q)
+                #show()
+                #plot(self.s)
+                #plot(self.simulate_price_a)
+                #plot(self.simulate_price_b)
+                #show()
                 raise Exception("Too large inventory")
         curr_control_vector_length = np.shape(self._a_control[0])[1]
         return int(np.true_divide(q, self.delta_q)) + (curr_control_vector_length-1)/2

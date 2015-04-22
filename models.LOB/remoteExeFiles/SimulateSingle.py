@@ -10,6 +10,7 @@ import re, random
 import numpy as np
 from pylab import plot
 from Cython.Shadow import NULL
+from fileinput import filename
 def constructFileName(options, directory):
     print directory
     if len(options)==0:
@@ -65,6 +66,57 @@ def summary_mean_var(options,simulate_num,fileName, randomOpt = False):
     myObj.run()
     print "done with run"
     return summary_mean_var_helper(myObj, simulate_num, options, fileName, randomOpt)
+def mean_var_cmp(myObj, simulate_num=1000, q_0=0):
+    
+    
+    mean_data = [0,0,0,0,0,0,0]  #[simulate_control_a_mean, simulate_control_b_mean, simulate_s_mean, simulate_q_mean]
+    squared_data = [0, 0, 0, 0,0,0,0] #[simulate_control_a_squared, simulate_control_b_squared, simulate_s_squared, simulate_q_squared]
+    successful_simulate_num = 0
+    for _ in xrange(simulate_num):
+        tmp_result = myObj.simulate_forward(q_0=q_0)
+
+        if tmp_result[0]:
+            successful_simulate_num += 1
+            
+            mean_data[0] += np.asarray(myObj.simulate_control_a)
+            mean_data[1] += np.asarray(myObj.simulate_control_b)
+            mean_data[2] += np.asarray(myObj.s)
+            mean_data[3] += np.asarray(myObj.q)
+            
+            try:
+                mean_data[4] += np.asarray(myObj.s_drift)
+            except:
+                pass
+            try: 
+                mean_data[5] += np.asarray(myObj.simulate_price_a)
+                mean_data[6] += np.asarray(myObj.simulate_price_b)
+            except:
+                pass
+            squared_data[0] += np.asarray(myObj.simulate_control_a)**2
+            squared_data[1] += np.asarray(myObj.simulate_control_b)**2
+            squared_data[2] += np.asarray(myObj.s)**2
+            squared_data[3] += np.asarray(myObj.q)**2
+            try:
+                squared_data[4] += np.asarray(myObj.s_drift)**2
+            except:
+                pass
+            try: 
+                squared_data[5] += np.asarray(myObj.simulate_price_a)**2
+                squared_data[6] += np.asarray(myObj.simulate_price_b)**2
+            except:
+                pass
+            
+            #tmp_data.append( np.asarray(myObj.s).std())
+    mean_data = [np.true_divide(array,successful_simulate_num) for array in mean_data]
+    var_data = []
+    for i in xrange(len(squared_data)):
+        var_data.append(np.true_divide(squared_data[i],successful_simulate_num) - mean_data[i]**2)        
+        
+    print "done with the simulation"
+    #return [fileName, myObj, mean_data, var_data]
+    
+    return[mean_data, var_data, myObj.failed_simulation]
+
 def summary_mean_var_helper(myObj, simulate_num, options, fileName, randomOpt, dataCheckingOption=False):
 
     mean_data = [0,0,0,0,0,0,0]  #[simulate_control_a_mean, simulate_control_b_mean, simulate_s_mean, simulate_q_mean]
@@ -136,8 +188,11 @@ def summary_mean_var_helper(myObj, simulate_num, options, fileName, randomOpt, d
     #return [fileName, myObj, mean_data, var_data]
     return [data_for_checking, fileName,\
             fixed_q_control, mean_data, var_data, myObj.failed_simulation, q_0s, tmp_data]
-def dumpData(data):
-    fileHandler = open(data[0], 'w')
+def dumpData(data, fileName=None):
+    if fileName is None:
+        fileHandler = open(data[0], 'w')
+    else:
+        fileHandler = open(filename, 'w')
     pickle.dump(data, fileHandler)
 
 class LoadSingleData(object):

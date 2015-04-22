@@ -106,8 +106,8 @@ class Poisson_OU_explicit_marketOrder(Abstract_OU_LOB):
                 return [np.reshape(optimal_a_reshape,np.shape(v_q_center)), np.reshape(optimal_b_reshape,np.shape(v_q_center))]
         except Exception as e:
             print e
-            plot(v)
-            show()
+            #plot(v)
+            #show()
             
             raise Exception()
         
@@ -166,10 +166,10 @@ class Poisson_OU_explicit_marketOrder(Abstract_OU_LOB):
             return v_new
         except Exception as e:
             print e
-            for i in xrange(np.shape(exp_neg_optimal_a)[1]):
-                plot(exp_neg_optimal_a[:, i])
+            #for i in xrange(np.shape(exp_neg_optimal_a)[1]):
+                #plot(exp_neg_optimal_a[:, i])
            
-            show()
+            #show()
         
     def xi_at_current_point(self, index, curr_q, curr_s):
         
