@@ -62,9 +62,9 @@ class Poisson_OU_explicit_marketOrder(Abstract_OU_LOB):
         sup_xi_func_negativeXi[v_q_center_reshape < s_space_casted_reshape] = self.gamma * \
         np.true_divide((v_q_center_reshape[v_q_center_reshape < s_space_casted_reshape] - s_space_casted_reshape[v_q_center_reshape < s_space_casted_reshape]) ** 2, 4 * self.l)
         F_a_optimal = (np.true_divide(self.kappa, self.kappa + self.gamma)) ** np.true_divide(self.kappa, self.gamma)\
-         * np.exp(self.kappa * (s_space_casted_reshape + v_q_backward_one_share_reshape))
+         * np.exp(self.kappa * (s_space_casted_reshape + v_q_backward_one_share_reshape)) * self.A * np.true_divide(self.gamma, self.gamma + self.kappa)
         F_b_optimal = (np.true_divide(self.kappa, self.kappa + self.gamma)) ** np.true_divide(self.kappa, self.gamma)\
-         * np.exp(self.kappa * ( -s_space_casted_reshape + v_q_forward_one_share_reshape))
+         * np.exp(self.kappa * ( -s_space_casted_reshape + v_q_forward_one_share_reshape)) * self.A * np.true_divide(self.gamma, self.gamma + self.kappa)
          
         optimal_xi = np.zeros(len(s_space_casted_reshape))
         bidLimitAskLimit_checkAskLimit_indice = np.all([v_q_center_reshape < s_space_casted_reshape, F_a_optimal > sup_xi_func_negativeXi], axis=0)

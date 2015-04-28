@@ -125,6 +125,18 @@ class Poisson_OU_implicit(Abstract_OU_LOB):
         LARGE_NUM = 100
         a_critical_value = 1 + self.beta * self.gamma * v_s_forward
         b_critical_value = 1 - self.beta * self.gamma * v_s_backward
+        a_critical_value[:self.implement_S] = 0
+        a_critical_value[-self.implement_S:] = 0
+        b_critical_value[:self.implement_S] = 0
+        b_critical_value[-self.implement_S:] = 0
+        for i in xrange(1, self.implement_I-1):
+            a_critical_value[i*self.implement_S] = 0
+            a_critical_value[(i+1) * self.implement_S - 1] = 0
+            b_critical_value[i*self.implement_S] = 0
+            b_critical_value[(i+1) * self.implement_S - 1] = 0
+            
+
+        
         
         if not price:
             exp_neg_optimal_a = np.zeros(len(v))
