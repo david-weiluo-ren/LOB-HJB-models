@@ -136,8 +136,7 @@ class Poisson_OU_implicit(Abstract_OU_LOB):
             b_critical_value[(i+1) * self.implement_S - 1] = 0
             
 
-        
-        
+         
         if not price:
             exp_neg_optimal_a = np.zeros(len(v))
             exp_neg_optimal_b = np.zeros(len(v)) 
@@ -184,6 +183,8 @@ class Poisson_OU_implicit(Abstract_OU_LOB):
         diagBlock_diagnal = np.ones(totalLength)
         diagBlock_upper = np.zeros(totalLength)
         diagBlock_lower = np.zeros(totalLength)
+        diagBlock_upper2 = np.zeros(totalLength)
+        diagBlock_lower2 = np.zeros(totalLength)
         for i in xrange(1, self.implement_I-1):
             q_value = self.implement_q_space[i]
             q_sign = 1 if q_value > 0 else -1
@@ -214,35 +215,44 @@ class Poisson_OU_implicit(Abstract_OU_LOB):
                             
                 raise Exception()    
                
-            diagBlock_upper[(i * self.implement_S + 1)] = -1
+            diagBlock_upper[(i * self.implement_S + 1)] = -2
             diagBlock_upper[(i * self.implement_S + 2) : ((i + 1) * self.implement_S)] = \
             -0.5 * (self.sigma_s / self.delta_s)**2 * self.delta_t\
             -self.alpha * (self.s_long_term_mean - s_array) * self.delta_t / self.delta_s * s_array_relLessThanMean\
             - self.A / (self.kappa + self.gamma) * self.delta_t / self.delta_s * self.beta * self.gamma\
              * a_curr_exp_neg[(i * self.implement_S + 1) : ((i + 1) * self.implement_S - 1)] ** self.kappa
             
+            
+            diagBlock_upper2[(i * self.implement_S + 2)] = 1
                   
-            diagBlock_lower[((i + 1) * self.implement_S)-2] = -1
+            diagBlock_lower[((i + 1) * self.implement_S)-2] = -2
             diagBlock_lower[i * self.implement_S : ((i + 1) * self.implement_S - 2)] = \
             -0.5 * (self.sigma_s / self.delta_s)**2 * self.delta_t\
             +self.alpha * (self.s_long_term_mean - s_array) * self.delta_t / self.delta_s * s_array_relGreaterThanMean\
              - self.A / (self.kappa + self.gamma) * self.delta_t / self.delta_s * self.beta * self.gamma\
              *b_curr_exp_neg[(i * self.implement_S + 1) : ((i + 1) * self.implement_S - 1)] ** self.kappa
-
+            diagBlock_lower2[((i + 1) * self.implement_S)-3] = 1
       
         
         upperBlock_diagonal = np.zeros(totalLength)
-        upperBlock_diagonal[:2 * self.implement_S] = -1
+        upperBlock_diagonal[:2 * self.implement_S] = -2
+        
+        upperBlock_diagonal2 = np.zeros(totalLength)
+        upperBlock_diagonal2[:3 * self.implement_S] = 1
         
         
         lowerBlock_diagonal = np.zeros(totalLength)
-        lowerBlock_diagonal[(-2*self.implement_S):] = -1
+        lowerBlock_diagonal[(-2*self.implement_S):] = -2
+        
+        lowerBlock_diagonal2 = np.zeros(totalLength)
+        lowerBlock_diagonal2[(-3*self.implement_S):] = 1
         
     
     
                     
-        matrix_data = [ lowerBlock_diagonal, diagBlock_lower, diagBlock_diagnal, diagBlock_upper, upperBlock_diagonal]
-        matrix_offset = [-1*self.implement_S, -1,0,1, self.implement_S]
+        matrix_data = [lowerBlock_diagonal2, lowerBlock_diagonal, diagBlock_lower2, diagBlock_lower, diagBlock_diagnal,\
+                        diagBlock_upper, diagBlock_upper2, upperBlock_diagonal, upperBlock_diagonal2]
+        matrix_offset = [-2 * self.implement_S, -1*self.implement_S, -2, -1,0,1, 2, self.implement_S, 2 * self.implement_S]
     
         co_matrix = sparse.spdiags(matrix_data, matrix_offset, totalLength, totalLength)
         tmp = co_matrix.todense()
