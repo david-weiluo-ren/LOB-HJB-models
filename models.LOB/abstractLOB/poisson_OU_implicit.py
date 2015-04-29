@@ -22,14 +22,13 @@ class Poisson_OU_implicit(Abstract_OU_LOB):
     
     def __init__(self, iter_max = 200, new_weight = 0.1, \
                  abs_threshold_power = -4, rlt_threshold_power = -3,\
-                 use_sparse=True, *args,  **kwargs):
+                 use_sparse=True,  *args,  **kwargs):
         super(Poisson_OU_implicit, self).__init__(*args, **kwargs)
         self.iter_max = iter_max
         self.new_weight = new_weight
         self.abs_threshold = 10**abs_threshold_power
         self.rlt_threshold = 10**rlt_threshold_power
         self.use_sparse = use_sparse
-        
         
         self.simulate_price_a_test = []
         self.simulate_price_b_test = []
@@ -106,7 +105,8 @@ class Poisson_OU_implicit(Abstract_OU_LOB):
     '''
 
     def terminal_condition_real(self):
-        return np.outer(self.implement_q_space, self.implement_s_space).reshape((1, -1))[0]
+        return np.outer(self.implement_q_space, self.implement_s_space).reshape((1, -1))[0] - \
+            self.lambda_tilde * np.outer(self.implement_q_space**2, np.ones(self.implement_S)).reshape((1, -1))[0]
    
     def exp_neg_feedback_control(self, v , price=False):
         v_s_forward = np.zeros(len(v))

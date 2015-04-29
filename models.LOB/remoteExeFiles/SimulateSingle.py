@@ -119,8 +119,8 @@ def mean_var_cmp(myObj, simulate_num=1000, q_0=0):
 
 def summary_mean_var_helper(myObj, simulate_num, options, fileName, randomOpt, dataCheckingOption=False):
 
-    mean_data = [0,0,0,0,0,0,0]  #[simulate_control_a_mean, simulate_control_b_mean, simulate_s_mean, simulate_q_mean]
-    squared_data = [0, 0, 0, 0,0,0,0] #[simulate_control_a_squared, simulate_control_b_squared, simulate_s_squared, simulate_q_squared]
+    mean_data = [0,0,0,0,0,0,0,0,0]  #[simulate_control_a_mean, simulate_control_b_mean, simulate_s_mean, simulate_q_mean]
+    squared_data = [0, 0, 0, 0,0,0,0,0,0] #[simulate_control_a_squared, simulate_control_b_squared, simulate_s_squared, simulate_q_squared]
     
     successful_simulate_num = 0
     q_0_origin = myObj.q_0
@@ -148,8 +148,14 @@ def summary_mean_var_helper(myObj, simulate_num, options, fileName, randomOpt, d
             try: 
                 mean_data[5] += np.asarray(myObj.simulate_price_a)
                 mean_data[6] += np.asarray(myObj.simulate_price_b)
+                mean_data[7] += np.asarray(myObj.x) + np.asarray(myObj.s) * np.asarray(myObj.q)
             except:
                 pass
+            try:
+                mean_data[8] += np.asarray(myObj.x) + (np.asarray(myObj.s) - myObj.lambda_tilde * np.asarray(myObj.q))* np.asarray(myObj.q)
+            except:
+                pass
+
             squared_data[0] += np.asarray(myObj.simulate_control_a)**2
             squared_data[1] += np.asarray(myObj.simulate_control_b)**2
             squared_data[2] += np.asarray(myObj.s)**2
@@ -161,9 +167,13 @@ def summary_mean_var_helper(myObj, simulate_num, options, fileName, randomOpt, d
             try: 
                 squared_data[5] += np.asarray(myObj.simulate_price_a)**2
                 squared_data[6] += np.asarray(myObj.simulate_price_b)**2
+                squared_data[7] += (np.asarray(myObj.x) + np.asarray(myObj.s) * np.asarray(myObj.q))**2
             except:
                 pass
-            
+            try:
+                squared_data[8] += (np.asarray(myObj.x) + (np.asarray(myObj.s) - myObj.lambda_tilde * np.asarray(myObj.q))* np.asarray(myObj.q))**2
+            except:
+                pass            
             #tmp_data.append( np.asarray(myObj.s).std())
             
 

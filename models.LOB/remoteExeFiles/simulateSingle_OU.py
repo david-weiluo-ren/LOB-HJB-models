@@ -36,7 +36,8 @@ def prepareOptions_forSameRandomness():
     
     parser.add_argument('-alpha', type = float, nargs='?',\
                         help="mean-reverting rate")
-    
+    parser.add_argument('-lambda_tilde', type = float, nargs='?',\
+                        help="left inventory penalty")
     parser.add_argument('-half_S', type=float, nargs="?",\
                         help="radius of space we consider around s_0")
     

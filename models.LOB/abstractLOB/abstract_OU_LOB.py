@@ -51,7 +51,7 @@ class Abstract_OU_LOB(AbstractLOB):
     @abc.abstractmethod
     def terminal_condition_real(self):
         pass
-    def __init__(self, alpha = 5, half_S = 2.0, half_I_S=40, s_long_term_mean=None, *args, **kwargs):
+    def __init__(self, alpha = 5, half_S = 2.0, half_I_S=40, s_long_term_mean=None, lambda_tilde = 0, *args, **kwargs):
         super(Abstract_OU_LOB, self).__init__(*args, **kwargs)
 
         self.alpha = alpha
@@ -61,6 +61,7 @@ class Abstract_OU_LOB(AbstractLOB):
         self.half_I_S = half_I_S
         self.I_S = 2*self.half_I_S + 1
         self.s_long_term_mean = s_long_term_mean if s_long_term_mean is not None else self.s_0
+        self.lambda_tilde = lambda_tilde
 
         self.compute_s_space()
         self.implement_s_space = np.hstack((-np.arange(self.extend_space, 0, -1) * self.delta_s + self.s_space[0],\
