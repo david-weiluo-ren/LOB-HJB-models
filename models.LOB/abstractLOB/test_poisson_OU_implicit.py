@@ -9,11 +9,11 @@ import numpy as np
 from pylab import plot, show
 class Test(unittest.TestCase):
 
-    def test_wierdUnconvergeCase(self):
+    def test_linearSystem(self):
         myObj_underflow2 = myObj_underflow2= Poisson_OU_implicit(A=10, s_0=3.0, kappa=1.5, sigma_s=3.0, num_time_step=1000,\
-                                  half_S=3, delta_t=0.001, N=10.0, half_I_S=300, new_weight=0.1,\
+                                  half_S=3, delta_t=0.001, N=2.0, half_I_S=2, new_weight=0.1,\
                                   beta=-0.2, q_0=0.0, alpha=10.0, gamma=1.0, s_long_term_mean=3.0, iter_max=5000)
-        myObj_underflow2.run()
+        myObj_underflow2.tmp_simulate_s()
         
     @unittest.SkipTest
     def test_largeBeta(self):

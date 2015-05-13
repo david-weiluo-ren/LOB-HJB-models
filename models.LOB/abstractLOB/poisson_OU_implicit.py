@@ -321,7 +321,8 @@ class Poisson_OU_implicit(Abstract_OU_LOB):
         
         
         
-        delta_x = (self.s[-1] + a_spread) * delta_N_a - (self.s[-1] - b_spread) * delta_N_b
+        #delta_x = (self.s[-1] + a_spread) * delta_N_a - (self.s[-1] - b_spread) * delta_N_b
+        delta_x = (curr_price_a) * delta_N_a - (curr_price_b) * delta_N_b
         delta_q = delta_N_b - delta_N_a
         delta_s_price_impact_part = self.delta_t * self.beta*(self.A* curr_control_a ** self.kappa \
                          - self.A* curr_control_b ** self.kappa )
@@ -353,7 +354,12 @@ class Poisson_OU_implicit(Abstract_OU_LOB):
         self.simulate_price_b = []
         self.simulate_price_a_test = []
         self.simulate_price_b_test = []
-
+    def tmp_simulate_s(self):
+        for i in xrange(self.num_time_step):
+            self.tmp_simulate_s_one_step()
+    def tmp_simulate_s_one_step(self):
+        new_s = self.s[-1] + self.alpha *(self.s_long_term_mean - self.s[-1])*self.delta_t + self.sigma_s * np.random.normal(0, np.sqrt(self.delta_t),1)
+        self.s.append(new_s)
 class Poisson_OU_implicit_truncateControlAtZero(Poisson_OU_implicit):
     
     def exp_neg_feedback_control(self, v , price=False):
