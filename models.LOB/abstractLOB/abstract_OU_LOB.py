@@ -114,7 +114,16 @@ class Abstract_OU_LOB(AbstractLOB):
 
         curr_control_a, curr_control_b = self.control_at_current_point(index, self.q[-1], self.s[-1])
         curr_price_a, curr_price_b = self.price_at_current_point(index, self.q[-1], self.s[-1])
+        self.simulate_one_step_forward_helper2(index, random_a, random_b, random_s, curr_control_a, curr_control_b, curr_price_a, curr_price_b)
+    def simulate_one_step_forward_constantPrice_helper(self, index, random_a, random_b, random_s):
+        curr_price_a = self.s_long_term_mean + np.true_divide(1, self.gamma) * np.log(1 + np.true_divide(self.gamma, self.kappa))
+        curr_price_b = self.s_long_term_mean - np.true_divide(1, self.gamma) * np.log(1 + np.true_divide(self.gamma, self.kappa))
+        curr_control_a = curr_price_a - self.s[-1]
+        curr_control_b = self.s[-1] - curr_price_b
+        self.simulate_one_step_forward_helper2(index, random_a, random_b, random_s, curr_control_a, curr_control_b, curr_price_a, curr_price_b)
 
+        
+    def simulate_one_step_forward_helper2(self, index, random_a, random_b, random_s, curr_control_a, curr_control_b, curr_price_a, curr_price_b):
         a_intensity = self.delta_t * self.A * np.exp(-self.kappa* curr_control_a)
         b_intensity = self.delta_t * self.A * np.exp(-self.kappa* curr_control_b)
         a_prob_0 = np.exp(-a_intensity)
@@ -156,6 +165,15 @@ class Abstract_OU_LOB(AbstractLOB):
         
     def simulate_one_step_forward_use_givenRandom(self, index, randomSource):
         self.simulate_one_step_forward_helper(index, randomSource[0][index], randomSource[1][index], randomSource[2][index])
+    def simulate_one_step_forward_constantPrice(self, index):
+        self.simulate_one_step_forward_constantPrice_helper(index, np.random.random(), np.random.random(), np.random.normal(0,1,1))
+        
+    def simulate_one_step_forward_use_givenRandom_constantPrice(self, index, randomSource):
+        self.simulate_one_step_forward_constantPrice_helper(index, randomSource[0][index], randomSource[1][index], randomSource[2][index])
+ 
+    
+    
+    
     def generate_random_source(self):
         return [np.random.random(self.num_time_step), np.random.random(self.num_time_step), np.random.normal(0, 1, self.num_time_step)]
     def init_forward_data(self, q_0 = None, x_0 = None, s_0 = None ):
@@ -163,3 +181,21 @@ class Abstract_OU_LOB(AbstractLOB):
         self.simulate_price_a[:] = []
         self.simulate_price_b[:] = []
         
+    def simulate_forward_constantPrice(self, K = None, q_0 = None, x_0 = None, s_0 = None, useGivenRandom = False, randomSource = None):
+        self.init_forward_data(q_0, x_0, s_0)
+        
+        for index in xrange(K if (K is not None) else self.num_time_step):
+            try:
+                if not useGivenRandom:
+                    self.simulate_one_step_forward_constantPrice(index)
+                else:
+                    self.simulate_one_step_forward_use_givenRandom_constantPrice(index, randomSource)
+            except Exception, e:
+                print e
+                print "exit current simulation"
+                return [False, self.simulate_control_a, self.simulate_control_b,\
+                self.q, self.q_a, self.q_b, self.x, self.s]
+            
+            
+        return [True, self.simulate_control_a, self.simulate_control_b,\
+                self.q, self.q_a, self.q_b, self.x, self.s]

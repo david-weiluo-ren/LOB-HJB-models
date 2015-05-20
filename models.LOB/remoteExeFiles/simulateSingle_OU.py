@@ -5,7 +5,7 @@ Created on Mar 5, 2015
 '''
 from remoteExeFiles.SaveObj_helpers import basicReader
 from remoteExeFiles.SimulateSingle import constructFileName, prepareOptionsHelper,\
-summary_mean_var_helper,prepareOptionsHelper2, dumpData
+summary_mean_var_helper,prepareOptionsHelper2, dumpData, summary_mean_var_constantPrice_helper
 from remoteExeFiles.SimulateComparison import simulateImplicitComparison
 from abstractLOB.poisson_OU_explicit import Poisson_explicit_OU_LOB
 from abstractLOB.poisson_OU_implicit import Poisson_OU_implicit, Poisson_OU_implicit_truncateControlAtZero
@@ -178,7 +178,15 @@ def save_OU_obj_helper():
         data.append(myObjImplicit_no_truncation)
     return data, simulate_num, truncation_option
 
-    
+def save_OU_constantPrice_helper():
+    options_forImplicit, options_forExplicit,  simulate_num, fileName, random_q_0, truncation_option \
+    = prepareOptions_forSameRandomness()
+    fileName += '_obj'
+    data = [fileName[:200], options_forImplicit]
+    myObjImplicit_no_truncation = Poisson_OU_implicit(**options_forImplicit)
+    myObjImplicit_no_truncation.run()
+    data.append(myObjImplicit_no_truncation)
+    return data, simulate_num, truncation_option  
 def save_OU_obj():
     data, simulate_num= save_OU_obj_helper()
     dumpData(data)
@@ -202,4 +210,9 @@ def simulate_OU_checkStd():
     
     dumpData(dump_data)
     
+def simulate_OU_constantPrice():
+    data, simulate_num, truncation_option  = save_OU_constantPrice_helper()
+    dump_data = [data[0], data[1]]
+    myObjImplicit_no_truncation = data[2]
+    dump_data.append(summary_mean_var_constantPrice_helper(myObjImplicit_no_truncation, simulate_num, data[1], data[0], False, False))
     

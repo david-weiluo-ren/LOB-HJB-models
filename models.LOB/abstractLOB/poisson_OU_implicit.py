@@ -14,7 +14,7 @@ from numpy.linalg import matrix_rank
 from abstract_OU_LOB import Abstract_OU_LOB
 from abstractLOB import AbstractImplicitLOB
 
-np.seterr(all='raise')
+#np.seterr(all='raise')
 
 
 
