@@ -215,4 +215,4 @@ def simulate_OU_constantPrice():
     dump_data = [data[0], data[1]]
     myObjImplicit_no_truncation = data[2]
     dump_data.append(summary_mean_var_constantPrice_helper(myObjImplicit_no_truncation, simulate_num, data[1], data[0], False, False))
-    
+    dumpData(dump_data)
