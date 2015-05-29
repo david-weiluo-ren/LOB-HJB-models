@@ -31,7 +31,15 @@ def prepareOptions():
     return prepareOptionsHelper2(options)
 
 def prepareOptions_forSameRandomness():
+    
     myReader = basicReader()
+    parser = prepareParserHelper(myReader)
+    options = myReader.parserToArgsDict(parser)
+    options.pop("type")
+    options.pop("BC")
+    return prepareOptionsHelper3(options)
+def prepareParserHelper(myReader):
+    
     parser = prepareOptionsHelper(myReader)
     
     parser.add_argument('-alpha', type = float, nargs='?',\
@@ -57,11 +65,22 @@ def prepareOptions_forSameRandomness():
     _truncation_option = 0 #0: both, 1: truncation only, 2: no truncation only.
     parser.add_argument('-truncation_option', type = int, default = _truncation_option,\
                         nargs = '?', help="number of trajectories to simulate")
-    
+    return parser
+def prepareOptions_forSaveSampleValueFunction():
+    myReader = basicReader()
+    parser = prepareParserHelper(myReader)
+    _sample_stepSize = 100
+    parser.add_argument('-sample_stepSize', type=int, nargs='?',default = _sample_stepSize,\
+                        help="the step size for sampling the value function")
     options = myReader.parserToArgsDict(parser)
     options.pop("type")
     options.pop("BC")
-    return prepareOptionsHelper3(options)
+    options_forImplicit, options_forExplicit,  simulate_num, fileName, random_q_0, truncation_option \
+    = prepareOptionsHelper3(options)
+    sample_stepSize = options["sample_stepSize"]
+    options_forImplicit.pop("sample_stepSize")
+    return [options_forImplicit, simulate_num, fileName, sample_stepSize]
+    
 def prepareOptionsHelper3(options):
     directory = options['dump_dir']
     options.pop('dump_dir')
@@ -187,6 +206,21 @@ def save_OU_constantPrice_helper():
     myObjImplicit_no_truncation.run()
     data.append(myObjImplicit_no_truncation)
     return data, simulate_num, truncation_option  
+
+def save_OU_sampleValueFunction_helper():
+    options_forImplicit, simulate_num, fileName, sample_stepSize\
+    = prepareOptions_forSaveSampleValueFunction()
+    fileName += '_obj'
+    data = [fileName[:200], options_forImplicit]
+    myObjImplicit_no_truncation = Poisson_OU_implicit(**options_forImplicit)
+    myObjImplicit_no_truncation.run()
+    myObjImplicit_no_truncation_unrun = Poisson_OU_implicit(**options_forImplicit)
+
+    data.append(myObjImplicit_no_truncation)
+    data.append(myObjImplicit_no_truncation_unrun)
+    return data, sample_stepSize
+
+
 def save_OU_obj():
     data, simulate_num= save_OU_obj_helper()
     dumpData(data)
@@ -216,3 +250,23 @@ def simulate_OU_constantPrice():
     myObjImplicit_no_truncation = data[2]
     dump_data.append(summary_mean_var_constantPrice_helper(myObjImplicit_no_truncation, simulate_num, data[1], data[0], False, False))
     dumpData(dump_data)
+
+def save_sampleValueFunction():
+    data, sample_stepSize  = save_OU_sampleValueFunction_helper()
+    dump_data = [data[0], data[1]]
+    myObjImplicit_no_truncation = data[2]
+    myObjImplicit_no_truncation_unrun = data[3]
+    sample_result = myObjImplicit_no_truncation._result[::sample_stepSize]
+    sample_a_price = myObjImplicit_no_truncation._a_price[::sample_stepSize]
+    sample_b_price = myObjImplicit_no_truncation._b_price[::sample_stepSize]
+    dump_data.append([sample_stepSize, myObjImplicit_no_truncation_unrun, sample_result, sample_a_price, sample_b_price])
+    dumpData(dump_data)
+
+
+
+
+
+
+
+
+
