@@ -255,7 +255,6 @@ class Poisson_OU_implicit(Abstract_OU_LOB):
         matrix_offset = [-2 * self.implement_S, -1*self.implement_S, -2, -1,0,1, 2, self.implement_S, 2 * self.implement_S]
     
         co_matrix = sparse.spdiags(matrix_data, matrix_offset, totalLength, totalLength)
-        tmp = co_matrix.todense()
         #print step_index,
         #print tmp.shape, matrix_rank(tmp)
         #print tmp
