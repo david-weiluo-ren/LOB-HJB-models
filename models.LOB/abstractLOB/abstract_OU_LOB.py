@@ -120,10 +120,10 @@ class Abstract_OU_LOB(AbstractLOB):
         curr_price_b = self.s_long_term_mean - np.true_divide(1, self.gamma) * np.log(1 + np.true_divide(self.gamma, self.kappa))
         curr_control_a = curr_price_a - self.s[-1]
         curr_control_b = self.s[-1] - curr_price_b
-        self.simulate_one_step_forward_helper2(index, random_a, random_b, random_s, curr_control_a, curr_control_b, curr_price_a, curr_price_b)
+        self.simulate_one_step_forward_helper2(index, random_a, random_b, random_s, curr_control_a, curr_control_b, curr_price_a, curr_price_b, False)
 
         
-    def simulate_one_step_forward_helper2(self, index, random_a, random_b, random_s, curr_control_a, curr_control_b, curr_price_a, curr_price_b):
+    def simulate_one_step_forward_helper2(self, index, random_a, random_b, random_s, curr_control_a, curr_control_b, curr_price_a, curr_price_b, warning=True):
         a_intensity = self.delta_t * self.A * np.exp(-self.kappa* curr_control_a)
         b_intensity = self.delta_t * self.A * np.exp(-self.kappa* curr_control_b)
         a_prob_0 = np.exp(-a_intensity)
@@ -134,9 +134,9 @@ class Abstract_OU_LOB(AbstractLOB):
         delta_N_b = 0 if random_b <= b_prob_0 else 1
         a_prob_1 = np.exp(-a_intensity) * a_intensity
         b_prob_1 = np.exp(-b_intensity) * b_intensity
-        if random_a > a_prob_0 + a_prob_1:
+        if random_a > a_prob_0 + a_prob_1 and warning:
             print "too large A_intensity!", index
-        if random_b > b_prob_0 + b_prob_1:
+        if random_b > b_prob_0 + b_prob_1 and warning:
             print "too large B_intensity!", index
         
         delta_x = (self.s[-1] + curr_control_a) * delta_N_a - (self.s[-1] - curr_control_b) * delta_N_b

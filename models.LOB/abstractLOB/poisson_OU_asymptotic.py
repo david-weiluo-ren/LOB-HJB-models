@@ -101,6 +101,9 @@ class Poisson_OU_asymptotic_fullBackwards_average(Poisson_OU_asymptotic):
                                             - np.true_divide(2 * self.M, self.sigma_s ** 2) *  (np.exp(-self.kappa * (self.s_long_term_mean - current_s)) + np.exp(self.kappa * (self.s_long_term_mean - current_s)))\
                                             + np.true_divide(2 * self.ergodic_const, self.sigma_s ** 2))
             if b**2 < 4*a*c:
+                print current_s
+                print a, b, c
+                print old_value
                 raise Exception("determinant is negative. Maybe try smaller delta_s.")
             
             self.derivative_atGreaterThanMu.append(np.true_divide( - b - np.sqrt(b**2 - 4*a*c), 2 * a))
