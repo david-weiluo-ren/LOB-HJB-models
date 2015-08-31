@@ -10,11 +10,13 @@ from pylab import plot, show
 class Test(unittest.TestCase):
 
     def test_linearSystem(self):
-        myObj_underflow2 = myObj_underflow2= Poisson_OU_implicit(A=10, s_0=3.0, kappa=1.5, sigma_s=3.0, num_time_step=1000,\
-                                  half_S=3, delta_t=0.001, N=2.0, half_I_S=2, new_weight=0.1,\
-                                  beta=-0.2, q_0=0.0, alpha=10.0, gamma=1.0, s_long_term_mean=3.0, iter_max=5000)
-        myObj_underflow2.tmp_simulate_s()
-        
+        myObj = Poisson_OU_implicit(A=10, s_0=0.0, kappa=1.5, sigma_s=10.0, num_time_step=20,\
+                                  half_S=4, delta_t=0.001, N=4.0, half_I_S=1500, new_weight=0.05,\
+                                  beta=0, q_0=0.0, alpha=10.0, gamma=1.0, s_long_term_mean=0.0, iter_max=5000, lambda_tilde = 0)
+        myObj.run()
+        myObj.show_arr(myObj._result[-1])
+        #myObj.show_arr(myObj._result[0])
+        show()
     @unittest.SkipTest
     def test_largeBeta(self):
         
