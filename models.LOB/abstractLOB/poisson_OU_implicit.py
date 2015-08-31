@@ -29,13 +29,13 @@ class Poisson_OU_implicit(Abstract_OU_LOB):
     def __init__(self, iter_max = 200, new_weight = 0.1, \
                  abs_threshold_power = -4, rlt_threshold_power = -3,\
                  use_sparse=True, mu_tilde = 0,  *args,  **kwargs):
+        self.mu_tilde = mu_tilde
         super(Poisson_OU_implicit, self).__init__(*args, **kwargs)
         self.iter_max = iter_max
         self.new_weight = new_weight
         self.abs_threshold = 10**abs_threshold_power
         self.rlt_threshold = 10**rlt_threshold_power
         self.use_sparse = use_sparse
-        self.mu_tilde = mu_tilde
         
         self.simulate_price_a_test = []
         self.simulate_price_b_test = []
