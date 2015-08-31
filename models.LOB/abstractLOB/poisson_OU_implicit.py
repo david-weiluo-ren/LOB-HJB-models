@@ -109,7 +109,7 @@ class Poisson_OU_implicit(Abstract_OU_LOB):
     def terminal_condition_real(self):
         return np.outer(self.implement_q_space, self.implement_s_space).reshape((1, -1))[0] - \
             self.lambda_tilde * np.outer(self.implement_q_space**2, np.ones(self.implement_S)).reshape((1, -1))[0] + \
-            self.mu_tilde * np.outer(np.ones(self.implement_I), np.ones(self.implement_S))
+            self.mu_tilde * np.outer(np.ones(self.implement_I), np.ones(self.implement_S)).reshape((1, -1))[0]
    
     def exp_neg_feedback_control(self, v , price=False):
         v_s_forward = np.zeros(len(v))
