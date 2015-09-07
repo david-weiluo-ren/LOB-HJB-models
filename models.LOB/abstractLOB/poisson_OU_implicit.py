@@ -233,17 +233,17 @@ class Poisson_OU_implicit(Abstract_OU_LOB):
       
         
         upperBlock_diagonal = np.zeros(totalLength)
-        upperBlock_diagonal[:2 * self.implement_S] = -1.5
+        upperBlock_diagonal[:2 * self.implement_S] = -1
         
         upperBlock_diagonal2 = np.zeros(totalLength)
-        upperBlock_diagonal2[:3 * self.implement_S] = 0.5
+        upperBlock_diagonal2[:3 * self.implement_S] = 0
         
         
         lowerBlock_diagonal = np.zeros(totalLength)
-        lowerBlock_diagonal[(-2*self.implement_S):] = -1.5
+        lowerBlock_diagonal[(-2*self.implement_S):] = -1
         
         lowerBlock_diagonal2 = np.zeros(totalLength)
-        lowerBlock_diagonal2[(-3*self.implement_S):] = 0.5
+        lowerBlock_diagonal2[(-3*self.implement_S):] = 0
         
     
     
