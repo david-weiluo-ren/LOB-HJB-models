@@ -164,12 +164,105 @@ class Poisson_OU_implicit(Abstract_OU_LOB):
             return [price_a, price_b]
             
             
-            
-            
-            
-            
-            
     def linear_system(self, v_curr, v_iter_old, curr_exp_neg_control, step_index):
+        a_curr_exp_neg, b_curr_exp_neg = curr_exp_neg_control
+        totalLength = self.implement_I * self.implement_S
+        eq_right = v_curr.copy()
+        eq_right[1:-1] += - 0.5 * self.sigma_s**2 * self.gamma * self.delta_t * ((v_iter_old[2:] - v_iter_old[:-2])/(2*self.delta_s))**2\
+            + self.A*self.delta_t/(self.kappa + self.gamma) * ((a_curr_exp_neg[1:-1]) ** self.kappa + (b_curr_exp_neg[1:-1]) ** self.kappa)
+        eq_right[:self.implement_S] = 0
+        eq_right[-self.implement_S:] = 0
+        for i in xrange(1, self.implement_I-1):
+            eq_right[i*self.implement_S] = 0
+            eq_right[(i+1) * self.implement_S - 1] = 0
+
+        
+        
+        diagBlock_diagnal = np.ones(totalLength)
+        diagBlock_upper = np.zeros(totalLength)
+        diagBlock_lower = np.zeros(totalLength)
+        diagBlock_upper2 = np.zeros(totalLength)
+        diagBlock_lower2 = np.zeros(totalLength)
+        for i in xrange(1, self.implement_I-1):
+            q_value = self.implement_q_space[i]
+            q_sign = 1 if q_value > 0 else -1
+            q_negativeIndicator = 1 if q_value < 0 else 0
+            q_positiveIndicator = 1 if q_value > 0 else 0
+            s_array = self.implement_s_space[1:-1]
+            s_array_relSign = np.ones(len(s_array))
+            s_array_relSign[s_array>self.s_long_term_mean] = -1
+            
+            s_array_relLessThanMean = np.ones(len(s_array))
+            s_array_relLessThanMean[s_array >= self.s_long_term_mean] = 0
+            s_array_relGreaterThanMean = np.ones(len(s_array))
+            s_array_relGreaterThanMean[s_array <= self.s_long_term_mean] = 0
+
+            
+            try:
+                diagBlock_diagnal[(i * self.implement_S + 1) : ((i + 1) * self.implement_S - 1)] = \
+                1 + (self.sigma_s / self.delta_s)**2 * self.delta_t\
+                 + self.alpha * (self.s_long_term_mean - s_array) * self.delta_t / self.delta_s * s_array_relSign\
+                 + self.A / (self.kappa + self.gamma) * self.delta_t / self.delta_s * self.beta * self.gamma\
+                * (a_curr_exp_neg[(i * self.implement_S + 1) : ((i + 1) * self.implement_S - 1)] ** self.kappa\
+                    + b_curr_exp_neg[(i * self.implement_S + 1) : ((i + 1) * self.implement_S - 1)] ** self.kappa)
+                
+                
+                
+            except Exception as e:
+                print e
+                            
+                raise Exception()    
+               
+            diagBlock_upper[(i * self.implement_S + 1)] = -2
+            diagBlock_upper[(i * self.implement_S + 2) : ((i + 1) * self.implement_S)] = \
+            -0.5 * (self.sigma_s / self.delta_s)**2 * self.delta_t\
+            -self.alpha * (self.s_long_term_mean - s_array) * self.delta_t / self.delta_s * s_array_relLessThanMean\
+            - self.A / (self.kappa + self.gamma) * self.delta_t / self.delta_s * self.beta * self.gamma\
+             * a_curr_exp_neg[(i * self.implement_S + 1) : ((i + 1) * self.implement_S - 1)] ** self.kappa
+            
+            
+            diagBlock_upper2[(i * self.implement_S + 2)] = 1
+                  
+            diagBlock_lower[((i + 1) * self.implement_S)-2] = -2
+            diagBlock_lower[i * self.implement_S : ((i + 1) * self.implement_S - 2)] = \
+            -0.5 * (self.sigma_s / self.delta_s)**2 * self.delta_t\
+            +self.alpha * (self.s_long_term_mean - s_array) * self.delta_t / self.delta_s * s_array_relGreaterThanMean\
+             - self.A / (self.kappa + self.gamma) * self.delta_t / self.delta_s * self.beta * self.gamma\
+             *b_curr_exp_neg[(i * self.implement_S + 1) : ((i + 1) * self.implement_S - 1)] ** self.kappa
+            diagBlock_lower2[((i + 1) * self.implement_S)-3] = 1
+      
+        
+        upperBlock_diagonal = np.zeros(totalLength)
+        upperBlock_diagonal[:2 * self.implement_S] = -1.5
+        
+        upperBlock_diagonal2 = np.zeros(totalLength)
+        upperBlock_diagonal2[:3 * self.implement_S] = 0.5
+        
+        
+        lowerBlock_diagonal = np.zeros(totalLength)
+        lowerBlock_diagonal[(-2*self.implement_S):] = -1.5
+        
+        lowerBlock_diagonal2 = np.zeros(totalLength)
+        lowerBlock_diagonal2[(-3*self.implement_S):] = 0.5
+        
+    
+    
+                    
+        matrix_data = [lowerBlock_diagonal2, lowerBlock_diagonal, diagBlock_lower2, diagBlock_lower, diagBlock_diagnal,\
+                        diagBlock_upper, diagBlock_upper2, upperBlock_diagonal, upperBlock_diagonal2]
+        matrix_offset = [-2 * self.implement_S, -1*self.implement_S, -2, -1,0,1, 2, self.implement_S, 2 * self.implement_S]
+    
+        co_matrix = sparse.spdiags(matrix_data, matrix_offset, totalLength, totalLength)
+        #print step_index,
+        #print tmp.shape, matrix_rank(tmp)
+        #print tmp
+        #print "right: ", eq_right
+        return [eq_right, co_matrix]        
+            
+            
+            
+            
+    def linear_system1(self, v_curr, v_iter_old, curr_exp_neg_control, step_index):
         a_curr_exp_neg, b_curr_exp_neg = curr_exp_neg_control
         totalLength = self.implement_I * self.implement_S
         eq_right = v_curr.copy()
