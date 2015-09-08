@@ -72,8 +72,6 @@ def prepareOptions_forSaveSampleValueFunction():
     _sample_stepSize = 100
     parser.add_argument('-sample_stepSize', type=int, nargs='?',default = _sample_stepSize,\
                         help="the step size for sampling the value function")
-    parser.add_argument('-mu_tilde', type=float, nargs='?', default = 0, \
-                        help = "change of variable for long term mean of s_t")
     options = myReader.parserToArgsDict(parser)
     options.pop("type")
     options.pop("BC")
