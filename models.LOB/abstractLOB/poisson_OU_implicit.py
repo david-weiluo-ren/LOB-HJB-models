@@ -28,9 +28,9 @@ class Poisson_OU_implicit(Abstract_OU_LOB):
     
     def __init__(self, iter_max = 200, new_weight = 0.1, \
                  abs_threshold_power = -4, rlt_threshold_power = -3,\
-                 use_sparse=True, mu_tilde = 0,  *args,  **kwargs):
-        self.mu_tilde = mu_tilde
+                 use_sparse=True,  *args,  **kwargs):
         super(Poisson_OU_implicit, self).__init__(*args, **kwargs)
+        
         self.iter_max = iter_max
         self.new_weight = new_weight
         self.abs_threshold = 10**abs_threshold_power
@@ -108,8 +108,7 @@ class Poisson_OU_implicit(Abstract_OU_LOB):
 
     def terminal_condition_real(self):
         return np.outer(self.implement_q_space, self.implement_s_space).reshape((1, -1))[0] - \
-            self.lambda_tilde * np.outer(self.implement_q_space**2, np.ones(self.implement_S)).reshape((1, -1))[0] + \
-            self.mu_tilde * np.outer(np.ones(self.implement_I), np.ones(self.implement_S)).reshape((1, -1))[0]
+            self.lambda_tilde * np.outer(self.implement_q_space**2, np.ones(self.implement_S)).reshape((1, -1))[0]
    
     def exp_neg_feedback_control(self, v , price=False):
         v_s_forward = np.zeros(len(v))
@@ -233,14 +232,14 @@ class Poisson_OU_implicit(Abstract_OU_LOB):
       
         
         upperBlock_diagonal = np.zeros(totalLength)
-        upperBlock_diagonal[:2 * self.implement_S] = 0
+        upperBlock_diagonal[:2 * self.implement_S] = -1
         
         upperBlock_diagonal2 = np.zeros(totalLength)
         upperBlock_diagonal2[:3 * self.implement_S] = 0
         
         
         lowerBlock_diagonal = np.zeros(totalLength)
-        lowerBlock_diagonal[(-2*self.implement_S):] = 0
+        lowerBlock_diagonal[(-2*self.implement_S):] = -1
         
         lowerBlock_diagonal2 = np.zeros(totalLength)
         lowerBlock_diagonal2[(-3*self.implement_S):] = 0
