@@ -17,7 +17,7 @@ class Test(unittest.TestCase):
                  "q_0":10}
         myObj = BrownianMotion_ExpUtil_Implicit_NeumannBC(**params)
         myObj.run()
-        plot(myObj.result[-1])
+        plot(myObj.value_function[-1])
         show()
         plot(myObj._a_control[-1])
         show()
@@ -30,7 +30,7 @@ class Test(unittest.TestCase):
         myObj = BrownianMotion_ExpUtil_Implicit_NeumannBC(**params)
         myObj.run(8000)
     
-        plot(myObj.result[-1])
+        plot(myObj.value_function[-1])
         show()
         plot(myObj._a_control[-1])
         show()
@@ -42,7 +42,7 @@ class Test(unittest.TestCase):
         myObj = BrownianMotion_ExpUtil_Implicit_NeumannBC(**params)
         myObj.run()
     
-        plot(myObj.result[-1])
+        plot(myObj.value_function[-1])
         show()
         plot(myObj._a_control[-1])
         show()
@@ -134,10 +134,10 @@ class Test(unittest.TestCase):
     def test_result1(self):
         myObj = BrownianMotion_ExpUtil_Implicit_NeumannBC()
         myObj.run()
-        self.assertEqual(len(myObj.q_space), len(myObj.result[-1]))
+        self.assertEqual(len(myObj.q_space), len(myObj.value_function[-1]))
         
         self.assertEqual(len(myObj.q_space), len(myObj.a_control[-1]))
-        tmp = myObj.result
+        tmp = myObj.value_function
         plot(tmp[-1])
         show()
 

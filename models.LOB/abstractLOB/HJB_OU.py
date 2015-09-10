@@ -1,0 +1,447 @@
+import numpy as np
+from scipy.sparse.linalg import spsolve
+from scipy import sparse
+from scipy.linalg import solve 
+
+class HJB_OU_solver(object):
+    '''
+    Numerical solver of the HJB equation from an HFT model with 
+    an OU reference price.
+    One use case is
+    
+    import HJB_OU
+    obj = HJB_OU.HJB_OU_solver()
+    obj.run()
+    for i in xrange(1, obj.implement_I - 1):
+        plot( obj._a_price[-1][i * obj.implement_S + 1 : (i + 1) * obj.implement_S])
+    '''
+
+
+    """
+    Parameters:
+    (1) gamma, A, kappa, sigma_s, alpha, s_long_term_mean, lambda_tilde 
+        are the ones in the model
+    (2) half_I: Q in the model, namely half length of the q-space.
+    (3) half_S: S in the model, namely half length of the s-space
+    (4) half_I_S: Number of grid points between s_long_term_mean 
+        and "s_long_term_mean + half_S" in the discretized s-space
+    (5) delta_t, num_time_step: T = delta_t * num_time_step
+    (6) gueant_boundary: True if using Gueant's boundary condition, 
+        False if using zero second-derivative boundary condition.
+    """
+    def __init__(self, gamma = 1.0, A = 10, kappa = 1.5, 
+                 sigma_s = 3.0, alpha = 5.0, s_long_term_mean=5.0, lambda_tilde = 0.2, 
+                 half_I = 10, half_S = 3.0, half_I_S=300, delta_t = 0.001,
+                 num_time_step = 10000, extend_space = 2,
+                 iter_max = 2000, new_weight = 0.1, abs_threshold_power = -4, rlt_threshold_power = -3,
+                 verbose = False, use_sparse=True, gueant_boundary = False, *args,  **kwargs):
+        
+        """
+        Parameters in the model
+        """
+        self.gamma = gamma
+        self.A = A
+        self.kappa = kappa
+        self.sigma_s = sigma_s # sigma in the model
+        self.alpha = alpha
+        self.s_long_term_mean = s_long_term_mean # mu in the model 
+        self.lambda_tilde = lambda_tilde #lambda in the model
+
+        """
+        choose boundary condition: 
+        (1) Gueant's bounded inventory condition
+        (2) The one I used: zero second derivative at the boundaries.
+        """
+        self.linear_system = self.linear_system_gueant if gueant_boundary else self.linear_system_zero_2nd_derivative
+
+
+        """
+        Number of time steps we will compute. Here T = \Delta t * num_time_step.
+        """
+        self.num_time_step = num_time_step 
+
+  
+        """
+        Compute the q-space.
+        
+        We will extend the q-space specified by the user. 
+        For instance, if the q-space considered by the user is [-Q, Q], 
+        then here the implement_q_space = [-Q - extend_space, Q + extend_space]
+        
+        The extended part is expected to be affected by the boundary condition.
+        """
+        self.extend_space = int(extend_space)
+        self.half_I = int(half_I)
+        self.delta_t = delta_t
+        self.I = 2 * self.half_I + 1
+        self.q_space  = np.linspace(-half_I, half_I, self.I)
+        self.implement_I = self.I + 2 * self.extend_space
+        self.implement_q_space = np.hstack((-np.arange(self.extend_space, 0, -1)  + self.q_space[0],\
+                                             self.q_space, \
+                                             np.arange(1, self.extend_space+1)  + self.q_space[-1]))
+        
+        """
+        Compute the s-space.
+        We extend it similarly to the case of q-space.
+        """        
+        self.half_S = half_S
+        self.half_I_S = half_I_S
+        self.I_S = 2*self.half_I_S + 1
+        self.s_space, self.delta_s  = np.linspace(self.s_long_term_mean-self.half_S, self.s_long_term_mean+self.half_S, self.I_S, retstep = True)
+        self.implement_s_space = np.hstack((-np.arange(self.extend_space, 0, -1) * self.delta_s + self.s_space[0],
+                                             self.s_space, 
+                                             np.arange(1, self.extend_space+1) * self.delta_s + self.s_space[-1]))
+        self.implement_S = len(self.implement_s_space)
+        
+        """
+        Use the terminal condition of HJB equation to compute
+        the v function at initial time (use \tau instead of t).
+        """
+        self.v_init = self.terminal_condition()
+        
+        """
+        Parameter used in iterations.
+        """
+        self.iter_max = iter_max
+        self.new_weight = new_weight
+        self.abs_threshold = 10**abs_threshold_power
+        self.rlt_threshold = 10**rlt_threshold_power
+        self.use_sparse = use_sparse
+        self.verbose = verbose
+
+        """
+        The index of elements that are used when determining
+        whether to stop the iteration. Basically the elements
+        that are not in the extended space.
+        """
+        self.valid_index = self.construct_valid_index()
+
+        """
+        The data we store during the computation.
+        (1) exp(-\delta^{a*})
+        (2) exp(-\delta^{b*})
+        (3) p^{a*}
+        (4) p^{b*}
+        (5) v(\tau, q, s)
+        """
+        self._a_exp_neg_control = []
+        self._b_exp_neg_control = []
+        self._a_price = []
+        self._b_price = []
+        self.value_function = []
+        
+        self.step_index = 0
+        
+    
+    """
+    Method used to run the solver. The only method
+    that needs to be called after the object is constructed.
+    After calling this method, the data are stored.
+    """    
+    def run(self, K = None):
+        self._a_control = []
+        self._b_control = []
+        self._a_price = []
+        self._b_price = []
+        self.value_function = []
+        self.step_index = 0
+
+        if K is None:
+            K = self.num_time_step
+        
+        v_curr = self.v_init 
+           
+        for i in xrange(K):
+            self.value_function.append(v_curr)      
+            v_curr = self.one_step_back(v_curr, i)
+            self.step_index += 1 
+            
+    """
+    Terminal Condition of HJB equation.
+    """
+    def terminal_condition(self):
+        return np.outer(self.implement_q_space, self.implement_s_space).reshape((1, -1))[0] - \
+            self.lambda_tilde * np.outer(self.implement_q_space**2, np.ones(self.implement_S)).reshape((1, -1))[0]
+   
+    
+    """
+    Use iteration to solve for the v function at next temporal position.
+    """
+    def one_step_back(self, v_curr, step_index):
+        
+        exp_neg_control= self.exp_neg_feedback_control(v_curr)
+        self._a_exp_neg_control.append(exp_neg_control[0])
+        self._b_exp_neg_control.append(exp_neg_control[1])
+               
+        optimal_price = self.optimal_price(v_curr)
+        self._a_price.append(optimal_price[0])
+        self._b_price.append(optimal_price[1])
+
+        v_tmp = v_curr 
+        iter_count = 0
+        while True:
+            curr_exp_neg_control = self.exp_neg_feedback_control(v_tmp)
+            v_new = self.one_iteration(v_curr, v_tmp, curr_exp_neg_control)
+            if self.close_enough(v_new, v_tmp):
+                if self.verbose:
+                    print "the {}th iteration converges in {} iterations".format(self.step_index, iter_count),
+                
+                if step_index % 500 == 0:
+                    print step_index, iter_count
+                return v_new
+            
+            """
+            v_tmp is the temporary value of v function used to computed the 
+            expression on the RHS of discrete equation. It would be updated
+            in every iteration until convergence.
+            """
+            v_tmp = self.new_weight * v_new + (1 - self.new_weight) * v_tmp
+            
+            iter_count += 1
+            if iter_count > self.iter_max:
+                print step_index
+                raise Exception('iteration cannot converge!')  
+           
+    """
+    One iteration for computing the v function. Basically solving a linear system.
+    """
+    def one_iteration(self, v_curr, v_iter_old, curr_exp_neg_control):
+        eq_right, co_matrix = self.linear_system(v_curr, v_iter_old, curr_exp_neg_control) 
+
+        if self.use_sparse:           
+            return spsolve(co_matrix, eq_right)
+        else:
+            return solve(co_matrix.todense(), eq_right)       
+    
+    """
+    Given v function at current time, compute 
+    (exp^{-\delta^{a*}}, exp^{-\delta^{b*}})
+    """
+    def exp_neg_feedback_control(self, v):
+        v_q_forward = np.ones(len(v))
+        v_q_backward = np.ones(len(v))
+        v_q_forward[ : -self.implement_S] = v[self.implement_S : ] -  v[ : -self.implement_S] 
+        v_q_backward[self.implement_S : ] = v[self.implement_S : ] -   v[ : -self.implement_S]
+       
+        implement_s_space_casted = np.tile(self.implement_s_space, self.implement_I)
+     
+        
+        exp_neg_optimal_a = (1+self.gamma/self.kappa)**(-1.0/self.gamma)\
+                * np.exp(implement_s_space_casted - v_q_backward)
+        exp_neg_optimal_a[: self.implement_S] = 0
+        exp_neg_optimal_b = (1+self.gamma/self.kappa)**(-1.0/self.gamma)\
+                * np.exp(-implement_s_space_casted + v_q_forward)
+        exp_neg_optimal_b[-self.implement_S:] = 0
+        return [exp_neg_optimal_a, exp_neg_optimal_b]
+    """
+    Given v function at current time, compute 
+    (p^{a*}, p^{b*})
+    """
+    def optimal_price(self, v):
+        v_q_forward = np.ones(len(v))
+        v_q_backward = np.ones(len(v))
+        v_q_forward[ : -self.implement_S] = v[self.implement_S : ] -  v[ : -self.implement_S] 
+        v_q_backward[self.implement_S : ] = v[self.implement_S : ] -   v[ : -self.implement_S]
+       
+        LARGE_NUM = 100
+
+        price_a = 1.0/self.gamma * np.log(1 + self.gamma/self.kappa) +  v_q_backward
+        price_a[: self.implement_S] = LARGE_NUM
+        price_b = - 1.0/self.gamma * np.log(1 + self.gamma/self.kappa) + v_q_forward
+        price_b[-self.implement_S:] = LARGE_NUM
+
+        return [price_a, price_b]            
+                      
+            
+           
+    """
+    Compute the coefficient matrix on the LHS and the expression
+    on the RHS of the discrete equation using the zero second-derivative
+    boundary condition.
+    """       
+    def linear_system_zero_2nd_derivative(self, v_curr, v_iter_tmp, curr_exp_neg_control):
+        a_curr_exp_neg, b_curr_exp_neg = curr_exp_neg_control
+        totalLength = self.implement_I * self.implement_S
+        
+        """
+        RHS of discrete equation.
+        The positions corresponding to the boundary points 
+        are set to be 0.
+        """
+        eq_right = v_curr.copy()
+        eq_right[1:-1] += - 0.5 * self.sigma_s ** 2 * self.gamma * self.delta_t * ((v_iter_tmp[2:] - v_iter_tmp[:-2]) / (2 * self.delta_s)) ** 2\
+            + self.A * self.delta_t / (self.kappa + self.gamma) * ((a_curr_exp_neg[1:-1]) ** self.kappa + (b_curr_exp_neg[1:-1]) ** self.kappa)
+        eq_right[:self.implement_S] = -0.01
+        eq_right[-self.implement_S:] = -0.01
+        for i in xrange(1, self.implement_I-1):
+            eq_right[i*self.implement_S] = 0
+            eq_right[(i+1) * self.implement_S - 1] = 0
+
+        
+        """
+        diagBlock_diagnal corresponds to the coefficients of v^{n+1}_{q, j},
+        diagBlock_upper corresponds to the coefficients of v^{n+1}_{q, j + 1},
+        diagBlock_lower corresponds to the coefficients of v^{n+1}_{q, j - 1}.
+        If not considering the boundary condition, then the coeffficent matrix is 
+        a tri-diagonal matrix, and those three arrays correspond to the non-zero
+        diagonals in that tri-diagonal matrix.        
+        """
+        diagBlock_diagnal = np.ones(totalLength)
+        diagBlock_upper = np.zeros(totalLength)
+        diagBlock_lower = np.zeros(totalLength)
+        
+        """
+        diagBlock_upper2 is the diagonal above diagBlock_upper,
+        diagBlock_lower2 is the diagonal below diagBlock_lower.
+        They are used to construct the boundary conditions for the
+        boundaries in the s-space.
+        """
+        diagBlock_upper2 = np.zeros(totalLength)
+        diagBlock_lower2 = np.zeros(totalLength)
+        
+        
+        for i in xrange(1, self.implement_I-1):
+            
+            s_array = self.implement_s_space[1:-1] # Non-boundary points in the s-space
+            
+            
+            """
+            The arrays of indicator functions
+            s_array_relSign: 1_{s_long_term_mean > s} - 1_{s_long_term_mean < s}
+            s_array_relGreaterThanMean: 1_{s_long_term_mean < s}
+            s_array_relLessThanMean: 1_{s_long_term_mean > s}
+            """
+            s_array_relSign = np.ones(len(s_array))
+            s_array_relSign[s_array>self.s_long_term_mean] = -1 
+            s_array_relLessThanMean = np.ones(len(s_array))
+            s_array_relLessThanMean[s_array >= self.s_long_term_mean] = 0
+            s_array_relGreaterThanMean = np.ones(len(s_array))
+            s_array_relGreaterThanMean[s_array <= self.s_long_term_mean] = 0
+
+            
+            try:
+                diagBlock_diagnal[(i * self.implement_S + 1) : ((i + 1) * self.implement_S - 1)] = \
+                1 + (self.sigma_s / self.delta_s)**2 * self.delta_t\
+                 + self.alpha * (self.s_long_term_mean - s_array) * self.delta_t / self.delta_s * s_array_relSign                
+                
+            except Exception as e:
+                print e
+                            
+                raise Exception()    
+               
+            diagBlock_upper[(i * self.implement_S + 1)] = -2
+            diagBlock_upper[(i * self.implement_S + 2) : ((i + 1) * self.implement_S)] = \
+                -0.5 * (self.sigma_s / self.delta_s)**2 * self.delta_t\
+                -self.alpha * (self.s_long_term_mean - s_array) * self.delta_t / self.delta_s * s_array_relLessThanMean            
+            
+            diagBlock_upper2[(i * self.implement_S + 2)] = 1
+                  
+            diagBlock_lower[((i + 1) * self.implement_S)-2] = -2
+            diagBlock_lower[i * self.implement_S : ((i + 1) * self.implement_S - 2)] = \
+                -0.5 * (self.sigma_s / self.delta_s)**2 * self.delta_t\
+                +self.alpha * (self.s_long_term_mean - s_array) * self.delta_t / self.delta_s * s_array_relGreaterThanMean
+
+            diagBlock_lower2[((i + 1) * self.implement_S)-3] = 1
+      
+        
+        
+        """
+        upperBlock_diagonal, upperBlock_diagonal2, lowerBlock_diagonal, lowerBlock_diagonal2
+        are the ones used to construct boundary conditions for boundary points in q-space. 
+        """
+        upperBlock_diagonal = np.zeros(totalLength)
+        upperBlock_diagonal[:2 * self.implement_S] = -2
+        
+        upperBlock_diagonal2 = np.zeros(totalLength)
+        upperBlock_diagonal2[:3 * self.implement_S] = 1
+        
+        
+        lowerBlock_diagonal = np.zeros(totalLength)
+        lowerBlock_diagonal[(-2*self.implement_S):] = -2
+        
+        lowerBlock_diagonal2 = np.zeros(totalLength)
+        lowerBlock_diagonal2[(-3*self.implement_S):] = 1
+                    
+        
+        """
+        Collect all the diagonals constructed above and create the coefficient matrix.
+        """
+        matrix_data = [lowerBlock_diagonal2, lowerBlock_diagonal, diagBlock_lower2, diagBlock_lower, diagBlock_diagnal,\
+                        diagBlock_upper, diagBlock_upper2, upperBlock_diagonal, upperBlock_diagonal2]
+        matrix_offset = [-2 * self.implement_S, -1*self.implement_S, -2, -1,0,1, 2, self.implement_S, 2 * self.implement_S]
+    
+        co_matrix = sparse.spdiags(matrix_data, matrix_offset, totalLength, totalLength)
+
+        return [eq_right, co_matrix]  
+    
+    
+    """
+    Compute the coefficient matrix on the LHS and the expression
+    on the RHS of the discrete equation using Gueant's boundary condition.
+    """ 
+    def linear_system_gueant(self, v_curr, v_iter_tmp, curr_exp_neg_control):
+        a_curr_exp_neg, b_curr_exp_neg = curr_exp_neg_control
+        totalLength = self.implement_I * self.implement_S
+        eq_right = v_curr.copy()
+        eq_right[1:-1] += - 0.5 * self.sigma_s**2 * self.gamma * self.delta_t * ((v_iter_tmp[2:] - v_iter_tmp[:-2])/(2*self.delta_s))**2\
+            + self.A*self.delta_t/(self.kappa + self.gamma) * ((a_curr_exp_neg[1:-1]) ** self.kappa + (b_curr_exp_neg[1:-1]) ** self.kappa)
+        for i in xrange(self.implement_I):
+            eq_right[i*self.implement_S] = 0
+            eq_right[(i+1) * self.implement_S - 1] = 0
+
+        
+        
+        diagBlock_diagnal = np.ones(totalLength)
+        diagBlock_upper = np.zeros(totalLength)
+        diagBlock_lower = np.zeros(totalLength)
+        for i in xrange(self.implement_I):
+            s_array = self.implement_s_space[1:-1]
+            s_array_relSign = np.ones(len(s_array))
+            s_array_relSign[s_array>self.s_long_term_mean] = -1
+            
+            s_array_relLessThanMean = np.ones(len(s_array))
+            s_array_relLessThanMean[s_array >= self.s_long_term_mean] = 0
+            s_array_relGreaterThanMean = np.ones(len(s_array))
+            s_array_relGreaterThanMean[s_array <= self.s_long_term_mean] = 0
+
+            
+            try:
+                diagBlock_diagnal[(i * self.implement_S + 1) : ((i + 1) * self.implement_S - 1)] = \
+                1 + (self.sigma_s / self.delta_s)**2 * self.delta_t\
+                 + self.alpha * (self.s_long_term_mean - s_array) * self.delta_t / self.delta_s * s_array_relSign
+
+            except Exception as e:
+                print e
+                            
+                raise Exception()    
+               
+            diagBlock_upper[(i * self.implement_S + 1)] = -1
+            diagBlock_upper[(i * self.implement_S + 2) : ((i + 1) * self.implement_S)] = \
+            -0.5 * (self.sigma_s / self.delta_s)**2 * self.delta_t\
+            -self.alpha * (self.s_long_term_mean - s_array) * self.delta_t / self.delta_s * s_array_relLessThanMean
+             
+                  
+            diagBlock_lower[((i + 1) * self.implement_S)-2] = -1
+            diagBlock_lower[i * self.implement_S : ((i + 1) * self.implement_S - 2)] = \
+            -0.5 * (self.sigma_s / self.delta_s)**2 * self.delta_t\
+            +self.alpha * (self.s_long_term_mean - s_array) * self.delta_t / self.delta_s * s_array_relGreaterThanMean            
+                    
+        matrix_data = [diagBlock_lower, diagBlock_diagnal,\
+                        diagBlock_upper]
+        matrix_offset = [-1,0,1]
+    
+        co_matrix = sparse.spdiags(matrix_data, matrix_offset, totalLength, totalLength)
+        return [eq_right, co_matrix]  
+    
+    def construct_valid_index(self):
+        result = np.array([True] * (self.implement_I * self.implement_S))
+        result[:self.implement_S] = False
+        result[-self.implement_S:] = False
+        for i in xrange(1, self.implement_I-1):
+            result[i*self.implement_S] = False
+            result[(i+1)*self.implement_S - 1] = False
+        return result
+    
+    def close_enough(self, v_new, v_curr):
+        return np.allclose(v_curr[self.valid_index], v_new[self.valid_index], self.rlt_threshold, self.abs_threshold)\
+            and np.allclose(v_new[self.valid_index], v_curr[self.valid_index], self.rlt_threshold, self.abs_threshold)

@@ -43,7 +43,7 @@ class Test(unittest.TestCase):
     def test_result1(self):
         myObj = BrownianMotion_ExpUtil_Implicit_sameSlopeBC()
         myObj.run()
-        self.assertEqual(len(myObj.q_space), len(myObj.result[-1]))
+        self.assertEqual(len(myObj.q_space), len(myObj.value_function[-1]))
         
         self.assertEqual(len(myObj.q_space), len(myObj.a_control[-1]))
         tmp = myObj._result

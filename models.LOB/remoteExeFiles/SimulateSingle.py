@@ -10,7 +10,6 @@ import re, random
 import numpy as np
 from pylab import plot
 from Cython.Shadow import NULL
-from fileinput import filename
 def constructFileName(options, directory):
     print directory
     if len(options)==0:
@@ -186,8 +185,8 @@ def summary_mean_var_helper(myObj, simulate_num, options, fileName, randomOpt, d
     print squared_data[4]
     data_for_checking = [[], [], []]
     if dataCheckingOption:
-        for i in np.arange(0, len(myObj.result),int(len(myObj.result)/20)):
-            data_for_checking[0].append(myObj.result[i])
+        for i in np.arange(0, len(myObj.value_function),int(len(myObj.value_function)/20)):
+            data_for_checking[0].append(myObj.value_function[i])
             data_for_checking[1].append(myObj.a_control[i])
             data_for_checking[2].append(myObj.b_control[i])
 
@@ -202,7 +201,7 @@ def dumpData(data, fileName=None):
     if fileName is None:
         fileHandler = open(data[0], 'w')
     else:
-        fileHandler = open(filename, 'w')
+        fileHandler = open(fileName, 'w')
     pickle.dump(data, fileHandler)
 
 class LoadSingleData(object):

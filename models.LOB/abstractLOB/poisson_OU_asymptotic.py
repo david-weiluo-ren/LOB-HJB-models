@@ -29,8 +29,8 @@ class Poisson_OU_asymptotic(object):
             self.half_implement_S = (self.implement_S - 1) / 2
             self.delta_s = target_object.delta_s
             self.M = np.true_divide(self.A, self.kappa + self.gamma) * (1 + np.true_divide(self.gamma, self.kappa)) ** (-np.true_divide(self.kappa, self.gamma))
-            self.result = np.zeros(self.implement_S)
-            self.result[self.half_implement_S] = valueFunction_at_mu
+            self.value_function = np.zeros(self.implement_S)
+            self.value_function[self.half_implement_S] = valueFunction_at_mu
         self.derivative_atGreaterThanMu = []
         self.derivative_atLessThanMu = []
 
@@ -54,7 +54,7 @@ class Poisson_OU_asymptotic(object):
             update_part = self.updatePart_helper(old_value, current_s)
             new_value = old_value + self.delta_s * update_part
             self.derivative_atGreaterThanMu.append(new_value)
-        self.result[self.half_implement_S+1:] = self.valueFunction_at_mu + np.cumsum(self.delta_s * np.array(self.derivative_atGreaterThanMu))
+        self.value_function[self.half_implement_S+1:] = self.valueFunction_at_mu + np.cumsum(self.delta_s * np.array(self.derivative_atGreaterThanMu))
     def run_lessThanMu(self):
         for i in xrange(self.half_implement_S):
             current_s = self.implement_s_space[self.half_implement_S  - i]
@@ -62,7 +62,7 @@ class Poisson_OU_asymptotic(object):
             update_part = self.updatePart_helper(old_value, current_s)
             new_value = old_value - self.delta_s * update_part
             self.derivative_atLessThanMu.append(new_value)
-        self.result[:self.half_implement_S] = (self.valueFunction_at_mu - np.cumsum(self.delta_s * np.array(self.derivative_atLessThanMu)))[::-1]
+        self.value_function[:self.half_implement_S] = (self.valueFunction_at_mu - np.cumsum(self.delta_s * np.array(self.derivative_atLessThanMu)))[::-1]
             
             
             
@@ -75,7 +75,7 @@ class Poisson_OU_asymptotic_backwards(Poisson_OU_asymptotic):
                 np.true_divide(2 * self.M * self.delta_s, self.sigma_s ** 2) * (np.exp(-self.kappa * (self.s_long_term_mean - current_s)) + np.exp(self.kappa * (self.s_long_term_mean - current_s)))\
                 + np.true_divide(2 * self.ergodic_const * self.delta_s, self.sigma_s ** 2)
             self.derivative_atGreaterThanMu.append(np.true_divide(tmp, 1 + self.delta_s * np.true_divide(2*self.alpha*(self.s_long_term_mean - current_s), self.sigma_s ** 2)))
-        self.result[self.half_implement_S+1:] = self.valueFunction_at_mu + np.cumsum(self.delta_s * np.array(self.derivative_atGreaterThanMu))
+        self.value_function[self.half_implement_S+1:] = self.valueFunction_at_mu + np.cumsum(self.delta_s * np.array(self.derivative_atGreaterThanMu))
     def run_lessThanMu(self):
         for i in xrange(self.half_implement_S):
             current_s = self.implement_s_space[self.half_implement_S - 1 - i] - 0.5 * self.delta_s
@@ -86,7 +86,7 @@ class Poisson_OU_asymptotic_backwards(Poisson_OU_asymptotic):
 
             self.derivative_atLessThanMu.append(np.true_divide(tmp, -1 + self.delta_s * np.true_divide(2*self.alpha*(self.s_long_term_mean - current_s), self.sigma_s ** 2)))
         
-        self.result[:self.half_implement_S] = (self.valueFunction_at_mu - np.cumsum(self.delta_s * np.array(self.derivative_atLessThanMu)))[::-1]
+        self.value_function[:self.half_implement_S] = (self.valueFunction_at_mu - np.cumsum(self.delta_s * np.array(self.derivative_atLessThanMu)))[::-1]
     
 class Poisson_OU_asymptotic_fullBackwards_average(Poisson_OU_asymptotic):
     def run_greaterThanMu(self):
@@ -108,7 +108,7 @@ class Poisson_OU_asymptotic_fullBackwards_average(Poisson_OU_asymptotic):
             
             self.derivative_atGreaterThanMu.append(np.true_divide( - b - np.sqrt(b**2 - 4*a*c), 2 * a))
         
-        self.result[self.half_implement_S+1:] = self.valueFunction_at_mu + np.cumsum(self.delta_s * np.array(self.derivative_atGreaterThanMu))
+        self.value_function[self.half_implement_S+1:] = self.valueFunction_at_mu + np.cumsum(self.delta_s * np.array(self.derivative_atGreaterThanMu))
 
     def run_lessThanMu(self):
         for i in xrange(self.half_implement_S):
@@ -131,7 +131,7 @@ class Poisson_OU_asymptotic_fullBackwards_average(Poisson_OU_asymptotic):
             
             self.derivative_atLessThanMu.append(np.true_divide( - b + np.sqrt(b**2 - 4*a*c), 2 * a))
 
-        self.result[:self.half_implement_S] = (self.valueFunction_at_mu - np.cumsum(self.delta_s * np.array(self.derivative_atLessThanMu)))[::-1]
+        self.value_function[:self.half_implement_S] = (self.valueFunction_at_mu - np.cumsum(self.delta_s * np.array(self.derivative_atLessThanMu)))[::-1]
 
 class Poisson_OU_asymptotic_RK4(Poisson_OU_asymptotic):
     
@@ -145,7 +145,7 @@ class Poisson_OU_asymptotic_RK4(Poisson_OU_asymptotic):
             k3 = self.updatePart_helper(old_value + 0.5 * k2 * self.delta_s, current_s + 0.5 * self.delta_s)
             k4 = self.updatePart_helper(old_value + k3 * self.delta_s, current_s + self.delta_s)
             self.derivative_atGreaterThanMu.append( old_value + np.true_divide(1, 6) * (k1 + 2 * k2 + 2 * k3 + k4) * self.delta_s)
-        self.result[self.half_implement_S+1:] = self.valueFunction_at_mu + np.cumsum(self.delta_s * np.array(self.derivative_atGreaterThanMu))
+        self.value_function[self.half_implement_S+1:] = self.valueFunction_at_mu + np.cumsum(self.delta_s * np.array(self.derivative_atGreaterThanMu))
     def run_lessThanMu(self):
         for i in xrange(self.half_implement_S):
             current_s = self.implement_s_space[self.half_implement_S - i]
@@ -155,7 +155,7 @@ class Poisson_OU_asymptotic_RK4(Poisson_OU_asymptotic):
             k3 = self.updatePart_helper(old_value - 0.5 * k2 * self.delta_s, current_s - 0.5 * self.delta_s)
             k4 = self.updatePart_helper(old_value - k3 * self.delta_s, current_s - self.delta_s)
             self.derivative_atLessThanMu.append( old_value - np.true_divide(1, 6) * (k1 + 2 * k2 + 2 * k3 + k4) * self.delta_s)
-        self.result[:self.half_implement_S] = (self.valueFunction_at_mu - np.cumsum(self.delta_s * np.array(self.derivative_atLessThanMu)))[::-1]
+        self.value_function[:self.half_implement_S] = (self.valueFunction_at_mu - np.cumsum(self.delta_s * np.array(self.derivative_atLessThanMu)))[::-1]
 
 
 

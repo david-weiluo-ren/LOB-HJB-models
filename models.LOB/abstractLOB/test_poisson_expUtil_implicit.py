@@ -22,7 +22,7 @@ class Test(unittest.TestCase):
         myObj = Poisson_expUtil_implicit_NeumannBC(**params)
         myObj.run()
         
-        for arr in myObj.result:
+        for arr in myObj.value_function:
             plot(arr)
         show()  
         
@@ -86,8 +86,8 @@ class Test(unittest.TestCase):
             plot(myObj_zero_beta.q_space, myObj_zero_beta.a_control[0], 'b')
             show()
             
-            plot(myObj.q_space, myObj.result[-1], 'r')
-            plot(myObj_zero_beta.q_space, myObj_zero_beta.result[-1], 'b')
+            plot(myObj.q_space, myObj.value_function[-1], 'r')
+            plot(myObj_zero_beta.q_space, myObj_zero_beta.value_function[-1], 'b')
             show()  
     
     @unittest.SkipTest
@@ -106,8 +106,8 @@ class Test(unittest.TestCase):
         plot(myObj_zero_beta.q_space, myObj_zero_beta.a_control[0], 'b')
         show()
         
-        plot(myObj.q_space, myObj.result[-1], 'r')
-        plot(myObj_zero_beta.q_space, myObj_zero_beta.result[-1], 'b')
+        plot(myObj.q_space, myObj.value_function[-1], 'r')
+        plot(myObj_zero_beta.q_space, myObj_zero_beta.value_function[-1], 'b')
         show()
     
     @unittest.SkipTest
@@ -126,8 +126,8 @@ class Test(unittest.TestCase):
         plot(myObj_zero_beta.q_space, myObj_zero_beta.a_control[0], 'b')
         show()
         
-        plot(myObj.q_space, myObj.result[-1], 'r')
-        plot(myObj_zero_beta.q_space, myObj_zero_beta.result[-1], 'b')
+        plot(myObj.q_space, myObj.value_function[-1], 'r')
+        plot(myObj_zero_beta.q_space, myObj_zero_beta.value_function[-1], 'b')
         show()
     
     
@@ -293,11 +293,11 @@ class Test(unittest.TestCase):
         myObj.run()
         
        
-        self.assertEqual(len(myObj.q_space), len(myObj.result[-1]))
+        self.assertEqual(len(myObj.q_space), len(myObj.value_function[-1]))
         
         self.assertEqual(len(myObj.q_space), len(myObj.a_control[-1]))
         
-        plot(myObj.q_space, myObj.result[-1])
+        plot(myObj.q_space, myObj.value_function[-1])
         show()
         plot(myObj.q_space, myObj.a_control[-1])
         show()
@@ -313,11 +313,11 @@ class Test(unittest.TestCase):
             myObj.run()
         
        
-            self.assertEqual(len(myObj.q_space), len(myObj.result[-1]))
+            self.assertEqual(len(myObj.q_space), len(myObj.value_function[-1]))
         
             self.assertEqual(len(myObj.q_space), len(myObj.a_control[-1]))
         
-            plot(myObj.q_space, myObj.result[-1])
+            plot(myObj.q_space, myObj.value_function[-1])
             show()
             plot(myObj.q_space, myObj.a_control[-1])
             show()
@@ -329,7 +329,7 @@ class Test(unittest.TestCase):
             myObj.run()
         
        
-            self.assertEqual(len(myObj.q_space), len(myObj.result[-1]))
+            self.assertEqual(len(myObj.q_space), len(myObj.value_function[-1]))
             self.assertEqual(len(myObj.q_space), len(myObj.a_control[-1]))
             plot(myObj.q_space, myObj.a_control[-1])
         

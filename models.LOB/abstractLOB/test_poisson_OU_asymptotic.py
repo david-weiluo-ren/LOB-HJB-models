@@ -18,10 +18,10 @@ class Test(unittest.TestCase):
                                   abs_threshold_power = -6, rlt_threshold_power = -5)
         asymptotic_obj = Poisson_OU_asymptotic(myObj_normalAlpha_midA_noBeta_longTermMean3_longTime,0,0,5.67)
         asymptotic_obj.run()
-        plot(asymptotic_obj.result[1000:-1000])
+        plot(asymptotic_obj.value_function[1000:-1000])
         #plot(asymptotic_obj.derivative_atGreaterThanMu[:30])
         show()
-        #print asymptotic_obj.result
+        #print asymptotic_obj.value_function
         print asymptotic_obj.derivative_atGreaterThanMu
     
     
@@ -36,10 +36,10 @@ class Test(unittest.TestCase):
                                   abs_threshold_power = -6, rlt_threshold_power = -5)
         asymptotic_obj = Poisson_OU_asymptotic_backwards(myObj_normalAlpha_midA_noBeta_longTermMean3_longTime,-0.05,0,5.67)
         asymptotic_obj.run()
-        plot(asymptotic_obj.result[1000:-1000])
+        plot(asymptotic_obj.value_function[1000:-1000])
         #plot(asymptotic_obj.derivative_atGreaterThanMu[:30])
         show()
-        #print asymptotic_obj.result
+        #print asymptotic_obj.value_function
         print asymptotic_obj.derivative_atGreaterThanMu
     @unittest.SkipTest
     def test_shapeOfAsymptotic_backwards2(self):
@@ -50,10 +50,10 @@ class Test(unittest.TestCase):
                                   abs_threshold_power = -6, rlt_threshold_power = -5)
         asymptotic_obj = Poisson_OU_asymptotic_backwards(myObj_normalAlpha_midA_noBeta_longTermMean3_longTime,-0.045,0,5.6)
         asymptotic_obj.run()
-        plot(asymptotic_obj.implement_s_space[5000:-5000],asymptotic_obj.result[5000:-5000])
+        plot(asymptotic_obj.implement_s_space[5000:-5000],asymptotic_obj.value_function[5000:-5000])
         #plot(asymptotic_obj.derivative_atGreaterThanMu[:30])
         show()
-        #print asymptotic_obj.result
+        #print asymptotic_obj.value_function
         print asymptotic_obj.derivative_atGreaterThanMu
         
     @unittest.SkipTest
@@ -66,10 +66,10 @@ class Test(unittest.TestCase):
                                   abs_threshold_power = -6, rlt_threshold_power = -5)
         asymptotic_obj = Poisson_OU_asymptotic_fullBackwards_average(myObj_normalAlpha_midA_noBeta_longTermMean3_longTime,-0.05,0,5.67)
         asymptotic_obj.run()
-        plot(asymptotic_obj.result[1000:-1000])
+        plot(asymptotic_obj.value_function[1000:-1000])
         #plot(asymptotic_obj.derivative_atGreaterThanMu[:30])
         show()
-        #print asymptotic_obj.result
+        #print asymptotic_obj.value_function
         #print asymptotic_obj.derivative_atGreaterThanMu    
     @unittest.SkipTest
     def test_shapeOfAsymptotic_fullBackwards_average2(self):
@@ -80,10 +80,10 @@ class Test(unittest.TestCase):
                                   abs_threshold_power = -6, rlt_threshold_power = -5)
         asymptotic_obj = Poisson_OU_asymptotic_fullBackwards_average(myObj_normalAlpha_midA_noBeta_longTermMean3_longTime,-0.01,0,5.60)
         asymptotic_obj.run()
-        plot(asymptotic_obj.result[1:-1])
+        plot(asymptotic_obj.value_function[1:-1])
         #plot(asymptotic_obj.derivative_atGreaterThanMu[:30])
         show()
-        #print asymptotic_obj.result
+        #print asymptotic_obj.value_function
         #print asymptotic_obj.derivative_atGreaterThanMu      
         
     @unittest.SkipTest
@@ -96,7 +96,7 @@ class Test(unittest.TestCase):
                                   abs_threshold_power = -6, rlt_threshold_power = -5)
         asymptotic_obj = Poisson_OU_asymptotic_RK4(myObj_normalAlpha_midA_noBeta_longTermMean3_longTime,-0.05,0,5.67)
         asymptotic_obj.run()
-        plot(asymptotic_obj.result[1000:-1000])
+        plot(asymptotic_obj.value_function[1000:-1000])
         #plot(asymptotic_obj.derivative_atGreaterThanMu[:30])
         show()
         
@@ -110,7 +110,7 @@ class Test(unittest.TestCase):
         l=1000
         asymptotic_obj_test = Poisson_OU_asymptotic_RK4(myObj_largeAlpha_largeA_noBeta_longTermMean3_longTime_finerTimeForAsymptotic,0.0,0,52.968)
         asymptotic_obj_test.run()
-        plot(asymptotic_obj_test.implement_s_space[l:-l], asymptotic_obj_test.result[l:-l])
+        plot(asymptotic_obj_test.implement_s_space[l:-l], asymptotic_obj_test.value_function[l:-l])
         show()
     
     

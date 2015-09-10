@@ -37,7 +37,7 @@ class AbstractLOB(object):
     
    
     @property
-    def result(self):
+    def value_function(self):
         return self._data_helper(self._index_result_2darray)
     
     @property
@@ -216,7 +216,7 @@ class AbstractLOB(object):
             K = self.num_time_step
         if use_cache:
             K = K - len(self._result) if K > len(self._result) else 0
-        v_curr = self.v_init if not use_cache or len(self.result) == 0 else self._result.pop()
+        v_curr = self.v_init if not use_cache or len(self.value_function) == 0 else self._result.pop()
            
         for i in xrange(K):
             self._result.append(v_curr)      
@@ -349,11 +349,11 @@ class AbstractImplicitLOB(AbstractLOB):
                 < self.rlt_threshold
     
     
-    def one_iteration(self, v_curr, curr_control, step_index):
+    def one_iteration(self, v_curr, curr_exp_neg_control, step_index):
        
         
         
-        eq_right, co_matrix = self.linear_system(v_curr, curr_control, step_index)
+        eq_right, co_matrix = self.linear_system(v_curr, curr_exp_neg_control, step_index)
         if self.use_sparse:
             
             return spsolve(co_matrix, eq_right)

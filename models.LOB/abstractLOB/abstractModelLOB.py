@@ -188,7 +188,7 @@ class Poisson_expUtil_implicit(AbstractImplicitLOB):
     def delta_q(self):
         return self._delta_q
     @property
-    def result(self):
+    def value_function(self):
         if len(self._result) == 0:
             return self._result
         return self.user_friendly_list_of_array(self._result, 0, call_func = lambda x: -x)
