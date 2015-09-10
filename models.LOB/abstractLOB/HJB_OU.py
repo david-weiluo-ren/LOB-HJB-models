@@ -32,7 +32,7 @@ class HJB_OU_solver(object):
     def __init__(self, gamma = 1.0, A = 10, kappa = 1.5, 
                  sigma_s = 3.0, alpha = 5.0, s_long_term_mean=5.0, lambda_tilde = 0.2, 
                  half_I = 10, half_S = 3.0, half_I_S=300, delta_t = 0.001,
-                 num_time_step = 10000, extend_space = 2,
+                 num_time_step = 10000, extend_space = 2, boundary_factor = 0,
                  iter_max = 2000, new_weight = 0.1, abs_threshold_power = -4, rlt_threshold_power = -3,
                  verbose = False, use_sparse=True, gueant_boundary = False, *args,  **kwargs):
         
@@ -108,6 +108,7 @@ class HJB_OU_solver(object):
         self.rlt_threshold = 10**rlt_threshold_power
         self.use_sparse = use_sparse
         self.verbose = verbose
+        self.boundary_factor = boundary_factor
 
         """
         The index of elements that are used when determining
@@ -228,10 +229,12 @@ class HJB_OU_solver(object):
         
         exp_neg_optimal_a = (1+self.gamma/self.kappa)**(-1.0/self.gamma)\
                 * np.exp(implement_s_space_casted - v_q_backward)
-        exp_neg_optimal_a[: self.implement_S] = 0
+        exp_neg_optimal_a[: self.implement_S] = self.boundary_factor * \
+            (2 * exp_neg_optimal_a[self.implement_S : (2 * self.implement_S)] - exp_neg_optimal_a[(2 * self.implement_S) : (3 * self.implement_S)])
         exp_neg_optimal_b = (1+self.gamma/self.kappa)**(-1.0/self.gamma)\
                 * np.exp(-implement_s_space_casted + v_q_forward)
-        exp_neg_optimal_b[-self.implement_S:] = 0
+        exp_neg_optimal_b[-self.implement_S:] = self.boundary_factor * \
+            (2 * exp_neg_optimal_a[(-2 * self.implement_S) : (-self.implement_S)] - exp_neg_optimal_a[(-3 * self.implement_S) : (-2 * self.implement_S)])
         return [exp_neg_optimal_a, exp_neg_optimal_b]
     """
     Given v function at current time, compute 
@@ -271,10 +274,10 @@ class HJB_OU_solver(object):
         eq_right = v_curr.copy()
         eq_right[1:-1] += - 0.5 * self.sigma_s ** 2 * self.gamma * self.delta_t * ((v_iter_tmp[2:] - v_iter_tmp[:-2]) / (2 * self.delta_s)) ** 2\
             + self.A * self.delta_t / (self.kappa + self.gamma) * ((a_curr_exp_neg[1:-1]) ** self.kappa + (b_curr_exp_neg[1:-1]) ** self.kappa)
-        eq_right[:self.implement_S] = -0.01
-        eq_right[-self.implement_S:] = -0.01
+        eq_right[:self.implement_S] = 0
+        eq_right[-self.implement_S:] = 0
         for i in xrange(1, self.implement_I-1):
-            eq_right[i*self.implement_S] = 0
+            eq_right[i * self.implement_S] = 0
             eq_right[(i+1) * self.implement_S - 1] = 0
 
         

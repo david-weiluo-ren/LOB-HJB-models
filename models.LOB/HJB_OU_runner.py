@@ -93,6 +93,8 @@ def prepareOptions_forSaveSampleValueFunction():
                         help="whether to use gueant's boundary")
     parser.add_argument("-dump_dir", type = str, default = _dump_dir,\
                         nargs = '?', help="the directory containing the dumped objs")
+    parser.add_argument("-boundary_factor", type = float, \
+                        nargs = '?', help="factor used in the boundary of the zero 2nd-derivative boundary method.")
 
     options = parserToArgsDict(parser)
     directory = options['dump_dir']
