@@ -230,11 +230,11 @@ class HJB_OU_solver(object):
         exp_neg_optimal_a = (1+self.gamma/self.kappa)**(-1.0/self.gamma)\
                 * np.exp(implement_s_space_casted - v_q_backward)
         exp_neg_optimal_a[: self.implement_S] = self.boundary_factor * \
-            (2 * exp_neg_optimal_a[self.implement_S : (2 * self.implement_S)] - exp_neg_optimal_a[(2 * self.implement_S) : (3 * self.implement_S)])
+            exp_neg_optimal_a[self.implement_S : (2 * self.implement_S)] ** 2 / exp_neg_optimal_a[(2 * self.implement_S) : (3 * self.implement_S)]
         exp_neg_optimal_b = (1+self.gamma/self.kappa)**(-1.0/self.gamma)\
                 * np.exp(-implement_s_space_casted + v_q_forward)
         exp_neg_optimal_b[-self.implement_S:] = self.boundary_factor * \
-            (2 * exp_neg_optimal_b[(-2 * self.implement_S) : (-self.implement_S)] - exp_neg_optimal_b[(-3 * self.implement_S) : (-2 * self.implement_S)])
+            exp_neg_optimal_b[(-2 * self.implement_S) : (-self.implement_S)] ** 2 / exp_neg_optimal_b[(-3 * self.implement_S) : (-2 * self.implement_S)]
         return [exp_neg_optimal_a, exp_neg_optimal_b]
     """
     Given v function at current time, compute 
@@ -397,6 +397,9 @@ class HJB_OU_solver(object):
         diagBlock_diagnal = np.ones(totalLength)
         diagBlock_upper = np.zeros(totalLength)
         diagBlock_lower = np.zeros(totalLength)
+        diagBlock_upper2 = np.zeros(totalLength)
+        diagBlock_lower2 = np.zeros(totalLength)
+        
         for i in xrange(self.implement_I):
             s_array = self.implement_s_space[1:-1]
             s_array_relSign = np.ones(len(s_array))
@@ -418,20 +421,27 @@ class HJB_OU_solver(object):
                             
                 raise Exception()    
                
-            diagBlock_upper[(i * self.implement_S + 1)] = -1
+            
+            diagBlock_upper[(i * self.implement_S + 1)] = -2
             diagBlock_upper[(i * self.implement_S + 2) : ((i + 1) * self.implement_S)] = \
-            -0.5 * (self.sigma_s / self.delta_s)**2 * self.delta_t\
-            -self.alpha * (self.s_long_term_mean - s_array) * self.delta_t / self.delta_s * s_array_relLessThanMean
-             
+                -0.5 * (self.sigma_s / self.delta_s)**2 * self.delta_t\
+                -self.alpha * (self.s_long_term_mean - s_array) * self.delta_t / self.delta_s * s_array_relLessThanMean            
+            
+            diagBlock_upper2[(i * self.implement_S + 2)] = 1
                   
-            diagBlock_lower[((i + 1) * self.implement_S)-2] = -1
+            diagBlock_lower[((i + 1) * self.implement_S)-2] = -2
             diagBlock_lower[i * self.implement_S : ((i + 1) * self.implement_S - 2)] = \
-            -0.5 * (self.sigma_s / self.delta_s)**2 * self.delta_t\
-            +self.alpha * (self.s_long_term_mean - s_array) * self.delta_t / self.delta_s * s_array_relGreaterThanMean            
+                -0.5 * (self.sigma_s / self.delta_s)**2 * self.delta_t\
+                +self.alpha * (self.s_long_term_mean - s_array) * self.delta_t / self.delta_s * s_array_relGreaterThanMean
+
+            diagBlock_lower2[((i + 1) * self.implement_S)-3] = 1
+            
+            
                     
-        matrix_data = [diagBlock_lower, diagBlock_diagnal,\
-                        diagBlock_upper]
-        matrix_offset = [-1,0,1]
+        matrix_data = [diagBlock_lower2, diagBlock_lower, diagBlock_diagnal,\
+                        diagBlock_upper, diagBlock_upper2]
+        matrix_offset = [ -2, -1,0,1, 2]
+
     
         co_matrix = sparse.spdiags(matrix_data, matrix_offset, totalLength, totalLength)
         return [eq_right, co_matrix]  
