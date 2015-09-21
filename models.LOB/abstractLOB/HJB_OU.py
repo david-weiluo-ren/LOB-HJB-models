@@ -2,7 +2,7 @@ import numpy as np
 from scipy.sparse.linalg import spsolve
 from scipy import sparse
 from scipy.linalg import solve 
-
+from collections import namedtuple
 class HJB_OU_solver(object):
     '''
     Numerical solver of the HJB equation from an HFT model with 
@@ -15,7 +15,6 @@ class HJB_OU_solver(object):
     for i in xrange(1, obj.implement_I - 1):
         plot( obj._a_price[-1][i * obj.implement_S + 1 : (i + 1) * obj.implement_S])
     '''
-
 
     """
     Parameters:
@@ -30,8 +29,9 @@ class HJB_OU_solver(object):
         False if using zero second-derivative boundary condition.
     """
     def __init__(self, gamma = 1.0, A = 10, kappa = 1.5, 
-                 sigma_s = 3.0, alpha = 5.0, s_long_term_mean=5.0, lambda_tilde = 0.2, 
+                 sigma_s = 3.0, alpha = 5.0, s_long_term_mean=5.0, lambda_tilde = 0, 
                  half_I = 10, half_S = 3.0, half_I_S=300, delta_t = 0.001,
+                 x_0 = 0, q_0 = 0, s_0 = None,
                  num_time_step = 10000, extend_space = 2, boundary_factor = 0, quadratic_boundary_factor = 0,
                  iter_max = 2000, new_weight = 0.1, abs_threshold_power = -4, rlt_threshold_power = -3,
                  verbose = False, use_sparse=True, gueant_boundary = False, *args,  **kwargs):
@@ -105,7 +105,13 @@ class HJB_OU_solver(object):
         """
         self.iter_max = iter_max
         self.new_weight = new_weight
-        self.abs_threshold = 10**abs_threshold_power
+        
+        if abs_threshold_power > 0:
+            raise Exception("the power of absolute threshold should be negative")
+        if rlt_threshold_power > 0:
+            raise Exception("the power of relative threshold should be negative")
+        
+        self.abs_threshold = 10**abs_threshold_power 
         self.rlt_threshold = 10**rlt_threshold_power
         self.use_sparse = use_sparse
         self.verbose = verbose
@@ -134,6 +140,22 @@ class HJB_OU_solver(object):
         
         self.step_index = 0
         
+        self.simulate_price_a = []
+        self.simulate_price_b = []
+        self.q_0 = q_0
+        self.x_0 = x_0
+        self.s_0 = self.s_long_term_mean if s_0 is None else s_0
+        self.simulate_control_a = []
+        self.simulate_control_b = []
+        self.simulate_price_a_test = []
+        self.simulate_price_b_test = []
+        self.q = []
+        self.q_a = [0]
+        self.q_b = [0]
+        self.x = []
+        self.s = []
+        self.s_drift = [0]
+        self.failed_simulation = 0
     
     """
     Method used to run the solver. The only method
@@ -141,10 +163,10 @@ class HJB_OU_solver(object):
     After calling this method, the data are stored.
     """    
     def run(self, K = None):
-        self._a_control = []
-        self._b_control = []
-        self._a_price = []
-        self._b_price = []
+        self._a_exp_neg_control[:] = []
+        self._b_exp_neg_control[:] = []
+        self._a_price[:] = []
+        self._b_price[:] = []
         self.value_function = []
         self.step_index = 0
 
@@ -460,3 +482,123 @@ class HJB_OU_solver(object):
     def close_enough(self, v_new, v_curr):
         return np.allclose(v_curr[self.valid_index], v_new[self.valid_index], self.rlt_threshold, self.abs_threshold)\
             and np.allclose(v_new[self.valid_index], v_curr[self.valid_index], self.rlt_threshold, self.abs_threshold)
+    def simulate_one_step_forward(self, index):
+        self.simulate_one_step_forward_helper(index, np.random.random(), np.random.random(), np.random.normal(0,1,1))
+        
+    def simulate_one_step_forward_use_givenRandom(self, index, randomSource):
+        self.simulate_one_step_forward_helper(index, randomSource[0][index], randomSource[1][index], randomSource[2][index])
+    def generate_random_source(self):
+        return [np.random.random(self.num_time_step), np.random.random(self.num_time_step), np.random.normal(0, 1, self.num_time_step)]
+   
+    def simulate_forward(self, K = None, q_0 = None, x_0 = None, s_0 = None, randomSource = None):
+        self.init_forward_data(q_0, x_0, s_0)
+        SimulationResult = namedtuple("SimulationResult",
+                                      ["success",
+                                       "control_a",
+                                       "control_b",
+                                       "q",
+                                       "q_a",
+                                       "q_b",
+                                       "x",
+                                       "s"])
+
+        for index in xrange(K if (K is not None) else self.num_time_step):
+            try:
+                if randomSource is None:
+                    self.simulate_one_step_forward(index)
+                else:
+                    self.simulate_one_step_forward_use_givenRandom(index, randomSource)
+            except Exception, e:
+                print e
+                print "exit current simulation"
+                return SimulationResult(False, self.simulate_control_a, self.simulate_control_b,\
+                self.q, self.q_a, self.q_b, self.x, self.s)
+            
+        return SimulationResult(True, self.simulate_control_a, self.simulate_control_b,\
+                self.q, self.q_a, self.q_b, self.x, self.s)
+    
+    def init_forward_data(self, q_0 = None, x_0 = None, s_0 = None ):
+        self.simulate_price_a[:] = []
+        self.simulate_price_b[:] = []
+        q_0 = self.q_0 if q_0 is None else q_0
+        x_0 = self.x_0 if x_0 is None else x_0
+        s_0 = self.s_0 if s_0 is None else s_0
+        self.simulate_control_a[:] = []
+        self.simulate_control_b[:] = []
+        self.simulate_price_a_test[:] = []
+        self.simulate_price_b_test[:] = []
+        self.q[:] = [q_0]
+        self.q_a[:] = [0]
+        self.q_b[:] = [0]
+        self.x[:] = [x_0]
+        self.s[:] = [s_0]
+        self.s_drift[:]=[0]
+        
+    def control_at_current_point(self, index, curr_q, curr_s):
+        
+        curr_exp_neg_control_a = self._a_exp_neg_control[-1*(index+1)][self.s_to_index_for_simulate_control(curr_s) + self.q_to_index_for_simulate_control(curr_q) * self.implement_S]
+        curr_exp_neg_control_b = self._b_exp_neg_control[-1*(index+1)][self.s_to_index_for_simulate_control(curr_s) + self.q_to_index_for_simulate_control(curr_q) * self.implement_S]
+        return [curr_exp_neg_control_a, curr_exp_neg_control_b]
+
+    def q_to_index_for_simulate_control(self, q):
+        if q > self.half_I or q < -self.half_I:
+                print q, self.half_I
+                self.failed_simulation += 1
+                raise Exception("Too large inventory")
+       
+        return int(q) + (self.implement_I - 1) / 2
+    
+    def s_to_index_for_simulate_control(self, s):
+        if s > self.s_long_term_mean+self.half_S or s < self.s_long_term_mean-self.half_S:
+                print "overflow S =", s, self.S
+                self.failed_simulation += 1
+                raise Exception("Too large price")
+        return int(np.true_divide(s-self.s_long_term_mean, self.delta_s)) + (self.implement_S-1)/2
+
+
+    def price_at_current_point(self, index, curr_q, curr_s):
+        
+        curr_price_a = self._a_price[-1*(index+1)][self.s_to_index_for_simulate_control(curr_s) + self.q_to_index_for_simulate_control(curr_q) * self.implement_S]
+        curr_price_b = self._b_price[-1*(index+1)][self.s_to_index_for_simulate_control(curr_s) + self.q_to_index_for_simulate_control(curr_q) * self.implement_S]
+        return [curr_price_a, curr_price_b]
+    
+    def simulate_one_step_forward_helper(self, index, random_a, random_b, random_s):
+        curr_exp_neg_control_a, curr_exp_neg_control_b = self.control_at_current_point(index, self.q[-1], self.s[-1])
+        curr_price_a, curr_price_b = self.price_at_current_point(index, self.q[-1], self.s[-1])
+        
+        a_spread = -np.log(curr_exp_neg_control_a) if curr_exp_neg_control_a > 0 else 100
+        b_spread = -np.log(curr_exp_neg_control_b) if curr_exp_neg_control_b > 0 else 100
+        a_intensity = self.delta_t * self.A * curr_exp_neg_control_a ** self.kappa
+        b_intensity = self.delta_t * self.A * curr_exp_neg_control_b ** self.kappa
+        a_prob_0 = np.exp(-a_intensity)
+        b_prob_0 = np.exp(-b_intensity)
+        #Here we only want our intensity small enough that with extremely low probability that Poisson event could happen more than twice in a small time interval.
+        
+        delta_N_a = 0 if random_a <= a_prob_0 else 1
+        delta_N_b = 0 if random_b <= b_prob_0 else 1
+        a_prob_1 = np.exp(-a_intensity) * a_intensity
+        b_prob_1 = np.exp(-b_intensity) * b_intensity
+        if random_a > a_prob_0 + a_prob_1:
+            print "too large A_intensity!", index, random_a, a_prob_0 + a_prob_1
+        if random_b > b_prob_0 + b_prob_1:
+            print "too large B_intensity!", index, random_b, b_prob_0 + b_prob_1
+        
+        delta_x = (curr_price_a) * delta_N_a - (curr_price_b) * delta_N_b
+        delta_q = delta_N_b - delta_N_a
+        delta_s_OU_part = self.alpha * (self.s_long_term_mean - self.s[-1]) * self.delta_t
+        delta_s = self.sigma_s * np.sqrt(self.delta_t) * random_s +delta_s_OU_part
+        
+        self.x.append(self.x[-1] + delta_x)
+        self.q.append(self.q[-1] + delta_q)
+        self.s.append(self.s[-1] + delta_s)
+        self.simulate_control_a.append(a_spread)
+        self.simulate_control_b.append(b_spread) 
+        self.simulate_price_a.append(curr_price_a)
+        self.simulate_price_b.append(curr_price_b)
+        self.simulate_price_a_test.append(self.s[-1] + a_spread)
+        self.simulate_price_b_test.append(self.s[-1] - b_spread)
+
+
+        #self.s_drift.append(self.s_drift[-1] +  delta_s_price_impact_part) 
+        self.s_drift.append(self.s_drift[-1] + delta_s_OU_part) 
+        
