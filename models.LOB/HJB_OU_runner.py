@@ -97,6 +97,10 @@ def prepareOptions_forSaveSampleValueFunction():
                         nargs = '?', help="factor used in the boundary of the zero 2nd-derivative boundary method.")
     parser.add_argument("-quadratic_boundary_factor", type = float, \
                         nargs = '?', help="quadratic factor used in the boundary on the second derivative of value function")
+    parser.add_argument("-data_storing_jump_size", type = float, \
+                        nargs = '?', help="jump size for storing data.")
+
+
 
     options = parserToArgsDict(parser)
     directory = options['dump_dir']

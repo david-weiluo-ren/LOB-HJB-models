@@ -33,7 +33,8 @@ class HJB_OU_solver(object):
                  half_I = 10, half_S = 3.0, half_I_S=300, delta_t = 0.001,
                  x_0 = 0, q_0 = 0, s_0 = None,
                  num_time_step = 10000, extend_space = 2, boundary_factor = 0, quadratic_boundary_factor = 0,
-                 iter_max = 2000, new_weight = 0.1, abs_threshold_power = -4, rlt_threshold_power = -3,
+                 iter_max = 2000, new_weight = 0.1, abs_threshold_power = -4, rlt_threshold_power = -3, 
+                 data_storing_jump_size = -1,
                  verbose = False, use_sparse=True, gueant_boundary = False, *args,  **kwargs):
         
         """
@@ -56,6 +57,7 @@ class HJB_OU_solver(object):
 
         self.quadratic_boundary_factor = quadratic_boundary_factor
 
+        self.data_storing_jump_size = data_storing_jump_size
         """
         Number of time steps we will compute. Here T = \Delta t * num_time_step.
         """
@@ -176,7 +178,8 @@ class HJB_OU_solver(object):
         v_curr = self.v_init 
            
         for i in xrange(K):
-            self.value_function.append(v_curr)      
+            if self.data_storing_jump_size > 0 and i % self.data_storing_jump_size == 0:
+                self.value_function.append(v_curr)      
             v_curr = self.one_step_back(v_curr, i)
             self.step_index += 1 
             
@@ -194,12 +197,13 @@ class HJB_OU_solver(object):
     def one_step_back(self, v_curr, step_index):
         
         exp_neg_control= self.exp_neg_feedback_control(v_curr)
-        self._a_exp_neg_control.append(exp_neg_control[0])
-        self._b_exp_neg_control.append(exp_neg_control[1])
-               
         optimal_price = self.optimal_price(v_curr)
-        self._a_price.append(optimal_price[0])
-        self._b_price.append(optimal_price[1])
+        
+        if self.data_storing_jump_size > 0 and step_index % self.data_storing_jump_size == 0:
+            self._a_exp_neg_control.append(exp_neg_control[0])
+            self._b_exp_neg_control.append(exp_neg_control[1])
+            self._a_price.append(optimal_price[0])
+            self._b_price.append(optimal_price[1])
 
         v_tmp = v_curr 
         iter_count = 0
@@ -244,8 +248,8 @@ class HJB_OU_solver(object):
     def exp_neg_feedback_control(self, v):
         v_q_forward = np.ones(len(v))
         v_q_backward = np.ones(len(v))
-        v_q_forward[ : -self.implement_S] = v[self.implement_S : ] -  v[ : -self.implement_S] 
-        v_q_backward[self.implement_S : ] = v[self.implement_S : ] -   v[ : -self.implement_S]
+        v_q_forward[ : -self.implement_S] = v[self.implement_S : ] - v[ : -self.implement_S] 
+        v_q_backward[self.implement_S : ] = v[self.implement_S : ] - v[ : -self.implement_S]
        
         implement_s_space_casted = np.tile(self.implement_s_space, self.implement_I)
      
@@ -491,6 +495,8 @@ class HJB_OU_solver(object):
         return [np.random.random(self.num_time_step), np.random.random(self.num_time_step), np.random.normal(0, 1, self.num_time_step)]
    
     def simulate_forward(self, K = None, q_0 = None, x_0 = None, s_0 = None, randomSource = None):
+        if self.data_storing_jump_size > 0:
+            raise Exception("The value function data is not complete because data_storing_jump_size > 0.")
         self.init_forward_data(q_0, x_0, s_0)
         SimulationResult = namedtuple("SimulationResult",
                                       ["success",
