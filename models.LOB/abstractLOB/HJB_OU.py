@@ -257,11 +257,11 @@ class HJB_OU_solver(object):
         exp_neg_optimal_a = (1+self.gamma/self.kappa)**(-1.0/self.gamma)\
                 * np.exp(implement_s_space_casted - v_q_backward)
         exp_neg_optimal_a[: self.implement_S] = self.boundary_factor * \
-            exp_neg_optimal_a[self.implement_S : (2 * self.implement_S)] ** 2 / exp_neg_optimal_a[(2 * self.implement_S) : (3 * self.implement_S)]
+            exp_neg_optimal_a[self.implement_S : (2 * self.implement_S)] / exp_neg_optimal_a[(2 * self.implement_S) : (3 * self.implement_S)] * exp_neg_optimal_a[self.implement_S : (2 * self.implement_S)]
         exp_neg_optimal_b = (1+self.gamma/self.kappa)**(-1.0/self.gamma)\
                 * np.exp(-implement_s_space_casted + v_q_forward)
         exp_neg_optimal_b[-self.implement_S:] = self.boundary_factor * \
-            exp_neg_optimal_b[(-2 * self.implement_S) : (-self.implement_S)] ** 2 / exp_neg_optimal_b[(-3 * self.implement_S) : (-2 * self.implement_S)]
+            exp_neg_optimal_b[(-2 * self.implement_S) : (-self.implement_S)] / exp_neg_optimal_b[(-3 * self.implement_S) : (-2 * self.implement_S)] * exp_neg_optimal_b[(-2 * self.implement_S) : (-self.implement_S)]
         return [exp_neg_optimal_a, exp_neg_optimal_b]
     
     """
