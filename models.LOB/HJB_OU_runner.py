@@ -35,7 +35,7 @@ def save_OU_sampleValueFunction_helper():
     fileName += '_obj'
     data = [fileName[:200], options_forImplicit]
     myObjImplicit_no_truncation = HJB_OU_solver(**options_forImplicit)
-    myObjImplicit_no_truncation.run()
+    myObjImplicit_no_truncation.run__OU_PC_log_hybrid()
     myObjImplicit_no_truncation_unrun = HJB_OU_solver(**options_forImplicit)
     myObjImplicit_no_truncation_unrun.linear_system = None
     data.append(myObjImplicit_no_truncation)
@@ -99,7 +99,8 @@ def prepareOptions_forSaveSampleValueFunction():
                         nargs = '?', help="quadratic factor used in the boundary on the second derivative of value function")
     parser.add_argument("-data_storing_jump_size", type = float, \
                         nargs = '?', help="jump size for storing data.")
-
+    parser.add_argument("OU_step", type=int, \
+                       nargs='?', help="number of OU in hybrid run")
 
 
     options = parserToArgsDict(parser)
