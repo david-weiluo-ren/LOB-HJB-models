@@ -254,11 +254,13 @@ class HJB_OU_solver(object):
         self.value_function[:] = []
         self.step_index = 0
         
-        if OU_step is None:
-            OU_step = self.OU_step
+        
         if K is None:
             K = self.num_time_step
-        
+        if OU_step is None:
+            OU_step = self.OU_step
+        if OU_step < 0:
+            OU_step = K
         v_curr = self.v_init
         
         for i in xrange(OU_step):
@@ -384,7 +386,7 @@ class HJB_OU_solver(object):
             v_result_PC_matrix_flatten = v_result_PC_matrix.T.reshape((1, -1))[0]
             v_new = -np.true_divide(1, self.gamma) * np.log(v_result_PC_matrix_flatten) + K
             if self.close_enough(v_new, v_tmp):
-                if step_index % 5 == 0:
+                if step_index % 500 == 0:
                     print step_index, itr
                 return v_new
             v_tmp = self.new_weight * v_new + (1 - self.new_weight) * v_tmp
