@@ -99,7 +99,7 @@ def prepareOptions_forSaveSampleValueFunction():
                         nargs = '?', help="quadratic factor used in the boundary on the second derivative of value function")
     parser.add_argument("-data_storing_jump_size", type = float, \
                         nargs = '?', help="jump size for storing data.")
-    parser.add_argument("OU_step", type=int, \
+    parser.add_argument("-OU_step", type=int, \
                        nargs='?', help="number of OU in hybrid run")
 
 
