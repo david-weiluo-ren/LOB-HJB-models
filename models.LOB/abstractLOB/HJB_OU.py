@@ -4,6 +4,7 @@ from scipy import sparse
 from scipy.linalg import solve 
 from collections import namedtuple
 from scipy.stats import norm
+from scipy import linalg
 from numpy import indices
 
 class HJB_OU_solver(object):
@@ -37,8 +38,8 @@ class HJB_OU_solver(object):
                  x_0 = 0, q_0 = 0, s_0 = None,
                  num_time_step = 10000, extend_space = 0, boundary_factor = 0, quadratic_boundary_factor = 0,
                  iter_max = 2000, new_weight = 0.1, abs_threshold_power = -4, rlt_threshold_power = -3, 
-                 data_storing_jump_size = -1, OU_step = 0,
-                 verbose = False, use_sparse=True, gueant_boundary = False, *args,  **kwargs):
+                 data_storing_jump_size = -1, OU_step = 0, delta_t_factor = 2, diagonal_factor = 0, sign_factor = 1,
+                 verbose = False, use_sparse=True, gueant_boundary = False, raise_overflow=False):
         
         """
         Parameters in the model
@@ -66,7 +67,9 @@ class HJB_OU_solver(object):
         """
         self.num_time_step = num_time_step 
         self.OU_step = OU_step
-  
+        self.delta_t_factor = delta_t_factor
+        self.diagonal_factor = diagonal_factor
+        self.sign_factor = sign_factor
         """
         Compute the q-space.
         
@@ -173,6 +176,37 @@ class HJB_OU_solver(object):
         
         
         self.OU_transition_prob = self.construct_OU_transition_prob()
+        self.exp_M_matrix =self.construct_exp_M_matrix()
+        if raise_overflow:
+            np.seterr(all='raise')
+        else:
+            np.seterr(all='warn')
+        try:
+            self.exp_kappa_SQ_matrix =  np.exp(-self.kappa * np.outer(self.implement_q_space, self.implement_s_space).reshape((1, -1))[0])
+            self.exp_gamma_SQ_matrix =  np.exp(-self.gamma * np.outer(self.implement_q_space, self.implement_s_space).reshape((1, -1))[0])
+        except:
+            raise Exception("exp_SQ_matrix overflow / underflow")
+        finally:
+            np.seterr(all='warn')
+            
+    def construct_exp_M_matrix(self):
+        np.seterr(all='raise')
+        #C_array = np.ones(self.implement_I) * self.A * np.true_divide(self.gamma, self.kappa + self.gamma)\
+        #    * (1 + np.true_divide(self.gamma, self.kappa)) ** (- np.true_divide(self.kappa, self.gamma)) * self.delta_t
+        
+        C_array = self.sign_factor * self.delta_t * np.ones(self.implement_I) * self.A\
+            * (1 + np.true_divide(self.gamma, self.kappa)) ** (-1 - np.true_divide(self.kappa, self.gamma))
+        diag_array = -self.delta_t * self.diagonal_factor * 0.5 * self.sigma_s ** 2 * self.gamma * self.kappa \
+            * self.implement_q_space ** 2 
+        m_matrix = sparse.spdiags([C_array, diag_array, C_array],
+                      [-1, 0, 1], 
+                      self.implement_I,
+                      self.implement_I, 
+                     format='csc')
+        np.seterr(all='warn')
+        
+        return linalg.expm(m_matrix).todense()
+    
     """
     Method used to run the solver. The only method
     that needs to be called after the object is constructed.
@@ -200,7 +234,7 @@ class HJB_OU_solver(object):
             v_curr = self.one_step_back(v_curr, i)
             self.step_index += 1 
     
-    def run_PC(self, K = None):
+    def run_PC(self, value_function=None, start_index=0, K = None, exact=False, parallel=False, normalization=False):
         self._a_exp_neg_control[:] = []
         self._b_exp_neg_control[:] = []
         self._a_price[:] = []
@@ -208,18 +242,27 @@ class HJB_OU_solver(object):
         self.value_function_PC = []
         self.step_index = 0
 
+
         if K is None:
             K = self.num_time_step
-        
-        v_curr = self.v_init_PC 
+        if value_function is None:
+            v_curr = self.v_init_PC
+        else:
+            v_curr = value_function
+
            
-        for i in xrange(K):
+        for i in xrange(start_index, K):
             if self.data_storing_jump_size < 0 or (
                 self.data_storing_jump_size > 0 and i % self.data_storing_jump_size == 0):
                 self.value_function_PC.append(v_curr.copy())  
             
-                    
-            v_curr = self.one_step_back_PC(v_curr, i)
+            if exact:
+                if parallel:
+                    v_curr = self.one_step_back_PC_exact_parallel(v_curr, i)
+                else:
+                    v_curr = self.one_step_back_PC_exact(v_curr, i, normalization)
+            else:      
+                v_curr = self.one_step_back_PC(v_curr, i)
             self.step_index += 1 
     def run_PC_log(self, K = None, opt=False, iter=False):
         self._a_exp_neg_control[:] = []
@@ -246,7 +289,8 @@ class HJB_OU_solver(object):
             else:
                 v_curr = self.one_step_back_PC_log(v_curr, i)
             self.step_index += 1 
-    def run__OU_PC_log_hybrid(self, OU_step=None, K=None, iter_flag=False):
+    
+    def run__OU_PC_log_hybrid(self, value_function=None, start_index=0, OU_step=None, K=None, iter_flag=False, opt_flag=False):
         self._a_exp_neg_control[:] = []
         self._b_exp_neg_control[:] = []
         self._a_price[:] = []
@@ -261,9 +305,12 @@ class HJB_OU_solver(object):
             OU_step = self.OU_step
         if OU_step < 0:
             OU_step = K
-        v_curr = self.v_init
-        
-        for i in xrange(OU_step):
+        if value_function is None:
+            v_curr = self.v_init
+        else:
+            v_curr = value_function
+            
+        for i in xrange(start_index, OU_step):
             if self.data_storing_jump_size < 0 or (
                 self.data_storing_jump_size > 0 and i % self.data_storing_jump_size == 0):
                 self.value_function.append(v_curr.copy())  
@@ -279,6 +326,8 @@ class HJB_OU_solver(object):
             
             if iter_flag:
                 v_curr = self.one_step_back_PC_log_iter(v_curr, i)
+            elif opt_flag:
+                v_curr = self.one_step_back_PC_log_opt(v_curr, i)
             else:
                 v_curr = self.one_step_back_PC_log(v_curr, i)
             self.step_index += 1 
@@ -302,9 +351,9 @@ class HJB_OU_solver(object):
         s_space_modified_forward[-1] = np.infty
         
         for s in self.implement_s_space:
-            weight = np.exp(-self.alpha * 0.5 * self.delta_t) 
+            weight = np.exp(-self.alpha * 0.5 * self.delta_t * self.delta_t_factor) 
             loc = np.average([s, self.s_long_term_mean], weights=[weight, 1 - weight])
-            scale = np.sqrt(np.true_divide(self.sigma_s ** 2, 2 * self.alpha) * (1 - np.exp(-2 * self.alpha * self.delta_t * 0.5)))
+            scale = np.sqrt(np.true_divide(self.sigma_s ** 2, 2 * self.alpha) * (1 - np.exp(-2 * self.alpha * self.delta_t * self.delta_t_factor * 0.5)))
             cdfs = norm.cdf(s_space_modified_forward, loc=loc, scale=scale)
             result.append(cdfs[1:] - cdfs[:-1])
         return np.array(result)
@@ -334,13 +383,90 @@ class HJB_OU_solver(object):
         if step_index % 500 == 0:
             print step_index
         v_intermediate_PC = np.exp(-self.A * np.true_divide(self.gamma, self.gamma + self.kappa) * 
-                                   (exp_neg_control[0] ** self.kappa + exp_neg_control[1] ** self.kappa) * 0.5 * self.delta_t) * v_curr_PC
+                                   (exp_neg_control[0] ** self.kappa + exp_neg_control[1] ** self.kappa) * 0.5 * self.delta_t * self.delta_t_factor) * v_curr_PC
         
         v_result_PC_matrix = np.dot(self.OU_transition_prob, v_intermediate_PC.reshape((self.implement_I, -1)).T)
         return v_result_PC_matrix.T.reshape((1, -1))[0]
     
+    def one_step_back_PC_exact(self, v_curr_PC, step_index, normalization=False): #Following Tzu-Wei's new method
+        np.seterr(all='raise')
+ 
+        if self.data_storing_jump_size < 0 or (
+            self.data_storing_jump_size > 0 and step_index % self.data_storing_jump_size == 0):
+            exp_neg_control = self.exp_neg_feedback_control_PC(v_curr_PC)
+            optimal_price = self.optimal_price_PC(v_curr_PC)
+            self._a_exp_neg_control.append(exp_neg_control[0])
+            self._b_exp_neg_control.append(exp_neg_control[1])
+            self._a_price.append(optimal_price[0])
+            self._b_price.append(optimal_price[1])
+        if step_index % 500 == 0:
+            print step_index
+        if normalization:
+            v_curr_PC = v_curr_PC / np.median(v_curr_PC)
+        w_curr = (self.exp_kappa_SQ_matrix * v_curr_PC ** (-np.true_divide(self.kappa, self.gamma))).reshape((self.implement_I, -1))
+        #print np.max(v_curr_PC), np.min(v_curr_PC)
+        w_intermediate = np.asarray(np.dot(self.exp_M_matrix, w_curr)).reshape(1, -1)[0]
+        
+        v_intermediate_PC = self.exp_gamma_SQ_matrix * w_intermediate ** (-np.true_divide(self.gamma, self.kappa))
+        
+       
+        v_result_PC_matrix = np.dot(self.OU_transition_prob, v_intermediate_PC.reshape((self.implement_I, -1)).T)
+        
+        np.seterr(all='warn')
+        return v_result_PC_matrix.T.reshape((1, -1))[0]
     
-    def one_step_back_PC_log(self, v_curr, step_index):
+    def one_step_back_PC_exact_parallel(self, v_curr_PC, step_index): #Following Tzu-Wei's new method
+        np.seterr(all='raise')
+
+        if self.data_storing_jump_size < 0 or (
+            self.data_storing_jump_size > 0 and step_index % self.data_storing_jump_size == 0):
+            exp_neg_control = self.exp_neg_feedback_control_PC(v_curr_PC)
+            optimal_price = self.optimal_price_PC(v_curr_PC)
+            self._a_exp_neg_control.append(exp_neg_control[0])
+            self._b_exp_neg_control.append(exp_neg_control[1])
+            self._a_price.append(optimal_price[0])
+            self._b_price.append(optimal_price[1])
+        if step_index % 500 == 0:
+            print step_index
+        
+        w_curr = (self.exp_kappa_SQ_matrix * v_curr_PC ** (-np.true_divide(self.kappa, self.gamma))).reshape((self.implement_I, -1))
+        w_intermediate = np.asarray(np.dot(self.exp_M_matrix, w_curr)).reshape(1, -1)[0]
+        
+        v_intermediate_PC_q = self.exp_gamma_SQ_matrix * w_intermediate ** (-np.true_divide(self.gamma, self.kappa))
+        
+        v_intermediate_PC_s = np.dot(self.OU_transition_prob, v_curr_PC.reshape((self.implement_I, -1)).T).T.reshape((1, -1))[0]
+        
+        np.seterr(all='warn')
+        return v_intermediate_PC_q + v_intermediate_PC_s - v_curr_PC
+
+    '''
+    def one_step_back_PC_log_exact(self, v_curr, step_index):
+        np.seterr(all='raise')
+        if self.data_storing_jump_size < 0 or (
+            self.data_storing_jump_size > 0 and step_index % self.data_storing_jump_size == 0):
+            exp_neg_control = self.exp_neg_feedback_control(v_curr)
+            optimal_price = self.optimal_price(v_curr)
+            self._a_exp_neg_control.append(exp_neg_control[0])
+            self._b_exp_neg_control.append(exp_neg_control[1])
+            self._a_price.append(optimal_price[0])
+            self._b_price.append(optimal_price[1])
+        if step_index % 500 == 0:
+            print step_index
+        
+        w_curr = np.exp(-self.kappa * (v_curr + np.outer(self.implement_q_space, self.implement_s_space).reshape((1, -1))[0]))
+        w_intermediate = np.dot(self.exp_M_matrix, w_curr.reshape(self.implement_I, -1))
+        exp_v_intermediate = np.exp(-self.kappa * np.outer(self.implement_q_space, self.implement_s_space).reshape((1, -1))[0]) \
+            * (w_intermediate) ** (-np.true_divide(self.gamma, self.kappa))
+        
+        v_result_PC_matrix = np.dot(self.OU_transition_prob, exp_v_intermediate.reshape((self.implement_I, -1)).T)
+        v_result_PC_matrix_flatten = v_result_PC_matrix.T.reshape((1, -1))[0]
+        
+        np.seterr(all='warn')
+
+        return -np.true_divide(1, self.gamma) * np.log(v_result_PC_matrix_flatten) 
+    '''
+    
+    def one_step_back_PC_log(self, v_curr, step_index, useMean=True):
         exp_neg_control = self.exp_neg_feedback_control(v_curr)
         optimal_price = self.optimal_price(v_curr)
         if self.data_storing_jump_size < 0 or (
@@ -352,9 +478,11 @@ class HJB_OU_solver(object):
         if step_index % 500 == 0:
             print step_index
         v_intermediate =  np.true_divide(self.A, self.gamma + self.kappa) * \
-                                   (exp_neg_control[0] ** self.kappa + exp_neg_control[1] ** self.kappa) * 0.5 * self.delta_t + v_curr
-        
-        K = np.mean(v_intermediate)
+                                   (exp_neg_control[0] ** self.kappa + exp_neg_control[1] ** self.kappa) * 0.5 * self.delta_t * self.delta_t_factor + v_curr
+        if useMean:
+            K = np.mean(v_intermediate)
+        else:
+            K = np.min(v_intermediate)
         exp_v_intermediate_normalized = np.exp(-self.gamma * (v_intermediate - K))
         v_result_PC_matrix = np.dot(self.OU_transition_prob, exp_v_intermediate_normalized.reshape((self.implement_I, -1)).T)
         v_result_PC_matrix_flatten = v_result_PC_matrix.T.reshape((1, -1))[0]
@@ -379,8 +507,8 @@ class HJB_OU_solver(object):
             exp_neg_control = self.exp_neg_feedback_control(v_tmp)
 
             v_intermediate =  np.true_divide(self.A, self.gamma + self.kappa) * \
-                                   (exp_neg_control[0] ** self.kappa + exp_neg_control[1] ** self.kappa) * 0.5 * self.delta_t + v_curr
-            K = np.mean(v_intermediate)
+                                   (exp_neg_control[0] ** self.kappa + exp_neg_control[1] ** self.kappa) * 0.5 * self.delta_t * self.delta_t_factor + v_curr
+            K = np.min(v_intermediate)
             exp_v_intermediate_normalized = np.exp(-self.gamma * (v_intermediate - K))
             v_result_PC_matrix = np.dot(self.OU_transition_prob, exp_v_intermediate_normalized.reshape((self.implement_I, -1)).T)
             v_result_PC_matrix_flatten = v_result_PC_matrix.T.reshape((1, -1))[0]
@@ -398,7 +526,6 @@ class HJB_OU_solver(object):
         
     
     def one_step_back_PC_log_opt(self, v_curr, step_index):
-        print step_index
         exp_neg_control = self.exp_neg_feedback_control(v_curr)
         optimal_price = self.optimal_price(v_curr)
         if self.data_storing_jump_size < 0 or (
@@ -421,7 +548,8 @@ class HJB_OU_solver(object):
             prob_row[~indices] = 0
             v_intermediate_reshaped_copy = v_intermediate_reshaped.copy()
             v_intermediate_reshaped_copy[:, ~indices] = 0
-            K_array = v_intermediate_reshaped_copy.sum(axis=1) / sum(indices)
+            #K_array = v_intermediate_reshaped_copy.sum(axis=1) / sum(indices)
+            K_array = np.min(v_intermediate_reshaped_copy[:, indices])
             v_intermediate_reshaped_copy[:, indices] = v_intermediate_reshaped_copy[:, indices] - K_array.reshape((-1, 1))            
             exp_v_intermediate_normalized = np.exp(-self.gamma * v_intermediate_reshaped_copy)
             v_result_PC_matrix = np.dot(prob_row, exp_v_intermediate_normalized.T)
@@ -483,6 +611,7 @@ class HJB_OU_solver(object):
         
         
     def exp_neg_feedback_control_PC(self, v_PC):
+        
         return self.exp_neg_feedback_control(-np.true_divide(1, self.gamma) * np.log(v_PC))
     
     def optimal_price_PC(self, v_PC):
@@ -503,12 +632,12 @@ class HJB_OU_solver(object):
         
         exp_neg_optimal_a = (1+self.gamma/self.kappa)**(-1.0/self.gamma)\
                 * np.exp(implement_s_space_casted - v_q_backward)
-        exp_neg_optimal_a[: self.implement_S] = self.boundary_factor * \
+        exp_neg_optimal_a[: self.implement_S] = 0 if (self.boundary_factor == 0) else self.boundary_factor * \
             exp_neg_optimal_a[self.implement_S : (2 * self.implement_S)] / exp_neg_optimal_a[(2 * self.implement_S) : (3 * self.implement_S)] * \
             exp_neg_optimal_a[self.implement_S : (2 * self.implement_S)]
         exp_neg_optimal_b = (1+self.gamma/self.kappa)**(-1.0/self.gamma)\
                 * np.exp(-implement_s_space_casted + v_q_forward)
-        exp_neg_optimal_b[-self.implement_S:] = self.boundary_factor * \
+        exp_neg_optimal_b[-self.implement_S:] = 0 if (self.boundary_factor == 0) else self.boundary_factor * \
             exp_neg_optimal_b[(-2 * self.implement_S) : (-self.implement_S)] / exp_neg_optimal_b[(-3 * self.implement_S) : (-2 * self.implement_S)] * \
             exp_neg_optimal_b[(-2 * self.implement_S) : (-self.implement_S)]
         return [exp_neg_optimal_a, exp_neg_optimal_b]
