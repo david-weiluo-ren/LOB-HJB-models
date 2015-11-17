@@ -109,11 +109,13 @@ def prepareOptions_forSaveSampleValueFunction():
     parser.add_argument("-OU_step", type=int, \
                        nargs='?', help="number of OU in hybrid run")
 
-    parser.add_argument("-PC_exact")
+    parser.add_argument("PC_exact", nargs='?')
 
     options = parserToArgsDict(parser)
     directory = options['dump_dir']
     options.pop('dump_dir')
+    if 'PC_exact' in options:
+        options.pop('PC_exact')
     fileName = constructFileName(options, directory)
 
     sample_stepSize = options["sample_stepSize"]
@@ -134,7 +136,7 @@ def constructFileName(options, directory):
     return directory + re.sub( r'[:,]',"_", re.sub(r'[\'{} ]', "", str(options)))
 
 if __name__ == '__main__':
-    if argv[1] == 'PC_exact':
+    if len(argv) > 1 and argv[1] == 'PC_exact':
         print 'Use PC exact and normalization'
         run_HJB_OU_solver(PC_exact=True)
     else:
