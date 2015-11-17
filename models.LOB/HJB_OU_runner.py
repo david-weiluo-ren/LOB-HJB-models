@@ -3,6 +3,7 @@ import pickle
 import abstractLOB
 import argparse
 import re
+from sys import argv
 '''
 Created on Sep 9, 2015
 
@@ -18,8 +19,8 @@ def dumpData(data, fileName=None):
         fileHandler = open(fileName, 'w')
     pickle.dump(data, fileHandler)
 
-def run_HJB_OU_solver():
-    data, sample_stepSize  = save_OU_sampleValueFunction_helper()
+def run_HJB_OU_solver(PC_exact=False):
+    data, sample_stepSize  = save_OU_sampleValueFunction_helper(PC_exact)
     dump_data = [data[0], data[1]]
     myObjImplicit_no_truncation = data[2]
     myObjImplicit_no_truncation_unrun = data[3]
@@ -29,15 +30,21 @@ def run_HJB_OU_solver():
     dump_data.append([sample_stepSize, myObjImplicit_no_truncation_unrun, sample_result, sample_a_price, sample_b_price])
     dumpData(dump_data)
     
-def save_OU_sampleValueFunction_helper():
+def save_OU_sampleValueFunction_helper(PC_exact):
     options_forImplicit, fileName, sample_stepSize\
     = prepareOptions_forSaveSampleValueFunction()
     fileName += '_obj'
     data = [fileName[:200], options_forImplicit]
     myObjImplicit_no_truncation = HJB_OU_solver(**options_forImplicit)
-    myObjImplicit_no_truncation.run__OU_PC_log_hybrid()
+    if PC_exact:
+        myObjImplicit_no_truncation.run_PC(exact=True, normalization=True)
+    else:
+        myObjImplicit_no_truncation.run__OU_PC_log_hybrid()
     myObjImplicit_no_truncation_unrun = HJB_OU_solver(**options_forImplicit)
     myObjImplicit_no_truncation_unrun.linear_system = None
+    if PC_exact:
+        myObjImplicit_no_truncation.value_function[:] = []
+        myObjImplicit_no_truncation.value_function_PC[:] = []
     data.append(myObjImplicit_no_truncation)
     data.append(myObjImplicit_no_truncation_unrun)
     return data, sample_stepSize
@@ -102,6 +109,7 @@ def prepareOptions_forSaveSampleValueFunction():
     parser.add_argument("-OU_step", type=int, \
                        nargs='?', help="number of OU in hybrid run")
 
+    parser.add_argument("-PC_exact")
 
     options = parserToArgsDict(parser)
     directory = options['dump_dir']
@@ -126,6 +134,11 @@ def constructFileName(options, directory):
     return directory + re.sub( r'[:,]',"_", re.sub(r'[\'{} ]', "", str(options)))
 
 if __name__ == '__main__':
-    run_HJB_OU_solver()
+    if argv[1] == 'PC_exact':
+        print 'Use PC exact and normalization'
+        run_HJB_OU_solver(PC_exact=True)
+    else:
+        run_HJB_OU_solver()
+    
 
 
