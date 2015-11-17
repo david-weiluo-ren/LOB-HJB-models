@@ -111,6 +111,8 @@ def prepareOptions_forSaveSampleValueFunction():
 
     parser.add_argument("PC_exact", nargs='?')
     parser.add_argument("-normalization", type=bool, nargs='?', help='normalization for run_PC')
+    parser.add_argument("-record_time_lower_bound", type=int, nargs='?')
+
 
     options = parserToArgsDict(parser)
     directory = options['dump_dir']

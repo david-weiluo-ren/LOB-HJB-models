@@ -39,7 +39,7 @@ class HJB_OU_solver(object):
                  num_time_step = 10000, extend_space = 0, boundary_factor = 0, quadratic_boundary_factor = 0,
                  iter_max = 2000, new_weight = 0.1, abs_threshold_power = -4, rlt_threshold_power = -3, 
                  data_storing_jump_size = -1, OU_step = 0, delta_t_factor = 2, diagonal_factor = 0, sign_factor = 1,
-                 verbose = False, use_sparse=True, gueant_boundary = False, raise_overflow=False):
+                 verbose = False, use_sparse=True, gueant_boundary = False, raise_overflow=False, record_time_lower_bound=-1):
         
         """
         Parameters in the model
@@ -70,6 +70,7 @@ class HJB_OU_solver(object):
         self.delta_t_factor = delta_t_factor
         self.diagonal_factor = diagonal_factor
         self.sign_factor = sign_factor
+        self.record_time_lower_bound = record_time_lower_bound
         """
         Compute the q-space.
         
@@ -253,7 +254,8 @@ class HJB_OU_solver(object):
            
         for i in xrange(start_index, K):
             if self.data_storing_jump_size < 0 or (
-                self.data_storing_jump_size > 0 and i % self.data_storing_jump_size == 0):
+                self.data_storing_jump_size > 0 and i % self.data_storing_jump_size == 0 
+                and (self.record_time_lower_bound > 0 and i > self.record_time_lower_bound)):
                 self.value_function_PC.append(v_curr.copy())  
             
             if exact:
