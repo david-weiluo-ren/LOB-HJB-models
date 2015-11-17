@@ -4,6 +4,7 @@ import abstractLOB
 import argparse
 import re
 from sys import argv
+import numpy as np
 '''
 Created on Sep 9, 2015
 
@@ -42,9 +43,8 @@ def save_OU_sampleValueFunction_helper(PC_exact):
         myObjImplicit_no_truncation.run__OU_PC_log_hybrid()
     myObjImplicit_no_truncation_unrun = HJB_OU_solver(**options_forImplicit)
     myObjImplicit_no_truncation_unrun.linear_system = None
-    if PC_exact:
-        myObjImplicit_no_truncation.value_function[:] = []
-        myObjImplicit_no_truncation.value_function_PC[:] = []
+    if PC_exact and (not normalization):
+        myObjImplicit_no_truncation.value_function[:] = -1/ myObjImplicit_no_truncation_unrun.gamma * np.log(myObjImplicit_no_truncation.value_function_PC)
     data.append(myObjImplicit_no_truncation)
     data.append(myObjImplicit_no_truncation_unrun)
     return data, sample_stepSize
