@@ -31,13 +31,13 @@ def run_HJB_OU_solver(PC_exact=False):
     dumpData(dump_data)
     
 def save_OU_sampleValueFunction_helper(PC_exact):
-    options_forImplicit, fileName, sample_stepSize\
+    options_forImplicit, fileName, sample_stepSize, normalization\
     = prepareOptions_forSaveSampleValueFunction()
     fileName += '_obj'
     data = [fileName[:200], options_forImplicit]
     myObjImplicit_no_truncation = HJB_OU_solver(**options_forImplicit)
     if PC_exact:
-        myObjImplicit_no_truncation.run_PC(exact=True, normalization=True)
+        myObjImplicit_no_truncation.run_PC(exact=True, normalization=normalization)
     else:
         myObjImplicit_no_truncation.run__OU_PC_log_hybrid()
     myObjImplicit_no_truncation_unrun = HJB_OU_solver(**options_forImplicit)
@@ -110,17 +110,22 @@ def prepareOptions_forSaveSampleValueFunction():
                        nargs='?', help="number of OU in hybrid run")
 
     parser.add_argument("PC_exact", nargs='?')
+    parser.add_argument("-normalization", type=bool, nargs='?', help='normalization for run_PC')
 
     options = parserToArgsDict(parser)
     directory = options['dump_dir']
     options.pop('dump_dir')
     if 'PC_exact' in options:
         options.pop('PC_exact')
+    normalization = True
+    if 'normalization' in options:
+        normalization = options['normalization']
+        options.pop('normalization')
     fileName = constructFileName(options, directory)
 
     sample_stepSize = options["sample_stepSize"]
     options.pop("sample_stepSize")
-    return [options, fileName, sample_stepSize]
+    return [options, fileName, sample_stepSize, normalization]
 
 
 
