@@ -256,9 +256,10 @@ class HJB_OU_solver(object):
             if self.data_storing_jump_size < 0 or (
                 self.data_storing_jump_size > 0 and i % self.data_storing_jump_size == 0):
                  
-                if self.record_time_lower_bound > 0 and i < self.record_time_lower_bound:
-                    continue 
-                self.value_function_PC.append(v_curr.copy())  
+                if self.record_time_lower_bound <  0 or (
+                   i > self.record_time_lower_bound):
+                     
+                    self.value_function_PC.append(v_curr.copy())  
             
             if exact:
                 if parallel:
@@ -397,12 +398,14 @@ class HJB_OU_solver(object):
  
         if self.data_storing_jump_size < 0 or (
             self.data_storing_jump_size > 0 and step_index % self.data_storing_jump_size == 0):
-            exp_neg_control = self.exp_neg_feedback_control_PC(v_curr_PC)
-            optimal_price = self.optimal_price_PC(v_curr_PC)
-            self._a_exp_neg_control.append(exp_neg_control[0])
-            self._b_exp_neg_control.append(exp_neg_control[1])
-            self._a_price.append(optimal_price[0])
-            self._b_price.append(optimal_price[1])
+            if self.record_time_lower_bound <  0 or (
+                   step_index > self.record_time_lower_bound):
+                exp_neg_control = self.exp_neg_feedback_control_PC(v_curr_PC)
+                optimal_price = self.optimal_price_PC(v_curr_PC)
+                self._a_exp_neg_control.append(exp_neg_control[0])
+                self._b_exp_neg_control.append(exp_neg_control[1])
+                self._a_price.append(optimal_price[0])
+                self._b_price.append(optimal_price[1])
         if step_index % 500 == 0:
             print step_index
         if normalization:
