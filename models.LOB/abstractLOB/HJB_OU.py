@@ -254,8 +254,10 @@ class HJB_OU_solver(object):
            
         for i in xrange(start_index, K):
             if self.data_storing_jump_size < 0 or (
-                self.data_storing_jump_size > 0 and i % self.data_storing_jump_size == 0 
-                and (self.record_time_lower_bound > 0 and i > self.record_time_lower_bound)):
+                self.data_storing_jump_size > 0 and i % self.data_storing_jump_size == 0):
+                 
+                if self.record_time_lower_bound > 0 and i < self.record_time_lower_bound:
+                    continue 
                 self.value_function_PC.append(v_curr.copy())  
             
             if exact:
