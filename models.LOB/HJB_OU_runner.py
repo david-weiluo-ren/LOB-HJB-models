@@ -109,10 +109,12 @@ def prepareOptions_forSaveSampleValueFunction():
     parser.add_argument("-OU_step", type=int, \
                        nargs='?', help="number of OU in hybrid run")
 
-    parser.add_argument("PC_exact", nargs='?')
-    parser.add_argument("-normalization", type=bool, nargs='?', help='normalization for run_PC')
+    parser.add_argument("-normalization", type=bool, default=False, nargs='?', help='normalization for run_PC')
     parser.add_argument("-record_time_lower_bound", type=int, nargs='?')
 
+    parser.add_argument("PC_exact", nargs='?')
+    
+    
 
     options = parserToArgsDict(parser)
     directory = options['dump_dir']
