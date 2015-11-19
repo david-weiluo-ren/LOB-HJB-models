@@ -285,7 +285,8 @@ class HJB_OU_solver(object):
         for i in xrange(K):
             if self.data_storing_jump_size < 0 or (
                 self.data_storing_jump_size > 0 and i % self.data_storing_jump_size == 0):
-                self.value_function.append(v_curr.copy())  
+                if self.record_time_lower_bound < 0 or i > self.record_time_lower_bound:
+                    self.value_function.append(v_curr.copy())  
             
             if opt:       
                 v_curr = self.one_step_back_PC_log_opt(v_curr, i)
@@ -318,7 +319,8 @@ class HJB_OU_solver(object):
         for i in xrange(start_index, OU_step):
             if self.data_storing_jump_size < 0 or (
                 self.data_storing_jump_size > 0 and i % self.data_storing_jump_size == 0):
-                self.value_function.append(v_curr.copy())  
+                if self.record_time_lower_bound < 0 or i > self.record_time_lower_bound:
+                    self.value_function.append(v_curr.copy())  
             
                     
             v_curr = self.one_step_back(v_curr, i)
@@ -575,10 +577,11 @@ class HJB_OU_solver(object):
         
         if self.data_storing_jump_size < 0 or (
             self.data_storing_jump_size > 0 and step_index % self.data_storing_jump_size == 0):
-            self._a_exp_neg_control.append(exp_neg_control[0])
-            self._b_exp_neg_control.append(exp_neg_control[1])
-            self._a_price.append(optimal_price[0])
-            self._b_price.append(optimal_price[1])
+            if self.record_time_lower_bound < 0 or step_index > self.record_time_lower_bound:
+                self._a_exp_neg_control.append(exp_neg_control[0])
+                self._b_exp_neg_control.append(exp_neg_control[1])
+                self._a_price.append(optimal_price[0])
+                self._b_price.append(optimal_price[1])
 
         v_tmp = v_curr 
         iter_count = 0
